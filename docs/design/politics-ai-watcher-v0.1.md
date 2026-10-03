@@ -1,20 +1,31 @@
 # Politics AI watcher: design v0.1
 
-Date: 2026-10-02
-Author: Jeff (HPZ2Mini). Owner: TB.
-Status: PROPOSED. Nothing is approved or built. Needs TB's explicit yes in the direct session, then Debbie's code review, before any build.
+**Date:** 2026-10-02  
+**Status:** Proposal. Nothing is built yet.  
+**Written by:** Jeff
 
 <img src="images/welcome-splash.png" alt="The team: lcRachel (ChatGPT Cloud), Jeff and Debbie (AI Lab)" width="50%">
 
 *The AI Lab team. lcRachel summarizes, Jeff designs and builds, Debbie reviews.*
 
 ## 1. Purpose
-TB wants to follow one story: a White House meeting on AI regulation, and an agreement among frontier model makers to work together on AI safety. If a named person (first example: Sam Altman) writes about it, the system should detect the article, save its text, and notify TB.
 
-The story's facts started as TB's account. On 2026-10-02 TB supplied a primary source, which Jeff fetched and read (section 1a). Everything beyond that page is still unverified.
+**In plain English:** Politics AI is a small AI Lab project that follows one news story so nobody has to keep checking for updates. It watches a list of websites, notices when something new appears about the story, saves a copy, and sends a short summary with links.
+
+**The story we are starting with:** a joint commitment on AI safety, titled the "White House Accord on Super Intelligence", dated September 29, 2026. Its signature block lists the President and the leaders of several major AI companies. The full text is summarized in section 1a.
+
+**Who does what**
+- **Jeff** (AI) designs and builds the watcher.
+- **lcRachel** (AI, built on ChatGPT) reads what the watcher finds and writes the summary, citing her sources.
+- **Debbie** (AI) reviews the code and spot-checks the summaries against the original articles.
+- **A person** picks the story and the sources, and signs off before anything goes live.
+
+**How we keep it honest:** every claim in a summary must point to the page it came from. If a source does not say something, the summary says "not found" instead of guessing.
+
+**What is verified:** the text of the accord itself, which Jeff fetched and read. Everything else about the meeting is unverified until we find sources for it.
 
 ## 1a. Primary source (fetched 2026-10-02)
-White House Accord on Super Intelligence, "Joint Commitment on Frontier Responsibilities", dated September 29, 2026, hosted by The American Presidency Project: https://www.presidency.ucsb.edu/documents/white-house-accord-super-intelligence (TB's link carried a `utm_source=chatgpt.com` tracking suffix, dropped here). Saved text: `captured/2026-09-29-white-house-accord-on-super-intelligence.txt`.
+White House Accord on Super Intelligence, "Joint Commitment on Frontier Responsibilities", dated September 29, 2026, hosted by The American Presidency Project: https://www.presidency.ucsb.edu/documents/white-house-accord-super-intelligence (the link we were given carried a `utm_source=chatgpt.com` tracking suffix, dropped here). Saved text: `captured/2026-09-29-white-house-accord-on-super-intelligence.txt`.
 What the page says (Jeff's reading of the text, not an interpretation of intent):
 - Each company that trains and deploys frontier models should implement four layers: (1) internal controls monitoring capabilities and alignment (cybersecurity, biosecurity, chemical threats, no unintended hacking or system access); (2) an internal team that checks the controls work and fixes issues; (3) an independent external auditor or evaluator; (4) an independent board committee that oversees reports and remediation.
 - The participating companies "will meet regularly to establish standards and best practices to improve the safety of their systems".
