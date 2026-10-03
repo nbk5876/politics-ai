@@ -4,7 +4,9 @@
     "label": "Sam Altman's blog",
     "type": "feed",
     "url": "https://blog.samaltman.com/posts.atom",
-    "people": ["Sam Altman"],
+    "people": [
+      "Sam Altman"
+    ],
     "enabled": true
   },
   {
@@ -16,19 +18,30 @@
     "enabled": true
   },
   {
+    "id": "bing-news-accord",
+    "label": "Bing News: White House Accord on AI safety",
+    "type": "feed",
+    "url": "https://www.bing.com/news/search?q=%22White+House+Accord%22+AI+safety&format=rss",
+    "require_keyword_in_title": true,
+    "enabled": true
+  },
+  {
     "id": "google-news-accord",
     "label": "Google News: White House Accord on AI safety",
     "type": "feed",
     "url": "https://news.google.com/rss/search?q=%22White+House+Accord%22+AI+safety+when:2d&hl=en-US&gl=US&ceid=US:en",
     "require_keyword_in_title": true,
-    "enabled": true
+    "enabled": false,
+    "note": "disabled: its links are redirects that cannot be opened by script; Bing News is used instead"
   },
   {
     "id": "anthropic-news",
     "label": "Anthropic news page",
     "type": "page",
     "url": "https://www.anthropic.com/news",
-    "people": ["Dario Amodei"],
+    "people": [
+      "Dario Amodei"
+    ],
     "enabled": false,
     "note": "phase 2: ordinary web page, no feed"
   },
@@ -37,7 +50,9 @@
     "label": "Dario Amodei's essays",
     "type": "page",
     "url": "https://www.darioamodei.com/",
-    "people": ["Dario Amodei"],
+    "people": [
+      "Dario Amodei"
+    ],
     "enabled": false,
     "note": "phase 2: ordinary web page, no feed"
   }

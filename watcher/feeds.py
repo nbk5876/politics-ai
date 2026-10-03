@@ -2,6 +2,7 @@
 import re
 import xml.etree.ElementTree as ET
 from html import unescape
+from urllib.parse import parse_qs, urlparse
 
 
 def _local(tag):
@@ -14,6 +15,19 @@ def _text(el):
 
 def _strip_tags(s):
     return re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", s or ""))).strip()
+
+
+def resolve_link(link):
+    """Bing News wraps each article URL in a redirect; the real URL is in its `url=` parameter.
+
+    (Google News links cannot be unwrapped this way, which is why Bing is the search source.)
+    """
+    u = urlparse(link)
+    if u.netloc.endswith("bing.com") and u.path.startswith("/news/apiclick"):
+        real = parse_qs(u.query).get("url", [""])[0]
+        if real.startswith("http"):
+            return real
+    return link
 
 
 def parse_feed(xml_text):
@@ -43,6 +57,9 @@ def parse_feed(xml_text):
                 d["summary"] = d["summary"] or _strip_tags("".join(child.itertext()))
             elif n in ("creator", "author"):
                 d["author"] = d["author"] or _strip_tags("".join(child.itertext()))
+        real = resolve_link(d["link"])
+        if real != d["link"]:  # redirect wrapper: use the real URL as link and as a stable id
+            d["link"], d["id"] = real, real
         d["id"] = d["id"] or d["link"]
         if d["title"] or d["link"]:
             items.append(d)

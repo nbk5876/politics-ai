@@ -99,6 +99,9 @@ Jeff fetched each candidate to see what the watcher can actually read:
 - Dario Amodei's site: an ordinary web page, no feed (`feed.xml` returned 404). Same approach as Anthropic: watch the page for new essay links. Medium.
 Because three sources are feeds and two are pages, the first build handles feeds first and adds page-watching second.
 
+### Change found while testing (2026-10-03): Bing News instead of Google News
+Google News feed links are redirects that a script cannot open: in a trial, all 10 article captures failed. Bing News search returns the real publisher URL inside each link, so the watcher can unwrap it. With Bing, 7 of 11 current articles were saved with their text (the rest are sites that need a browser, such as msn.com pages). Google News stays in `config/sources.json`, switched off. Summaries by lcRachel will go to LabChan only (no email for summaries).
+
 ### What this changes in the design
 - Twice a day keeps the model cost tiny: at most a few lcRachel calls per run, far under her hourly ceiling.
 - With summaries automatic, the "unchecked" label stays on every summary until Jeff or Debbie spot-check it (section 7).

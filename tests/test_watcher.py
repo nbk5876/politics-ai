@@ -46,6 +46,19 @@ class FeedTests(unittest.TestCase):
         self.assertEqual(it["summary"], "Companies commit to controls.")
 
 
+class ResolveTests(unittest.TestCase):
+    def test_bing_redirect_is_unwrapped_and_used_as_stable_id(self):
+        feed = ("<rss><channel><item><title>T</title><link>http://www.bing.com/news/apiclick.aspx?ref=x&amp;tid=ABC"
+                "&amp;url=https%3a%2f%2fexample.com%2fa%2fb&amp;c=1</link></item></channel></rss>")
+        (it,) = parse_feed(feed)
+        self.assertEqual(it["link"], "https://example.com/a/b")
+        self.assertEqual(it["id"], "https://example.com/a/b")
+
+    def test_other_links_are_left_alone(self):
+        from watcher.feeds import resolve_link
+        self.assertEqual(resolve_link("https://news.google.com/rss/articles/xyz"), "https://news.google.com/rss/articles/xyz")
+
+
 class RuleTests(unittest.TestCase):
     def test_keyword_match_and_miss(self):
         a, b = parse_feed(ATOM)
