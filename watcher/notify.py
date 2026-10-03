@@ -1,4 +1,7 @@
-"""Notifications: LabChan message and email. Used only in --live mode."""
+"""Notifications: LabChan message and email. Used only in --live mode.
+
+Feed titles and links go into the message text as-is. They are untrusted input: fine while the
+recipient is a person, but never pass them to an agent that acts on instructions."""
 import os
 import smtplib
 import subprocess
@@ -22,16 +25,26 @@ def format_match(m, saved_name=None, extraction_ok=True):
         "Why it matched: " + "; ".join(m["reasons"]),
     ]
     if saved_name:
-        lines.append(f"Saved: {saved_name}" + ("" if extraction_ok else " (text extraction failed)"))
+        lines.append(f"Saved: {saved_name}" + ("" if extraction_ok else " (text extraction incomplete)"))
     text = "\n".join(lines)
     return text[:LABCHAN_LIMIT]
 
 
-def format_digest(matches, cap):
-    lines = [f"Politics AI: {len(matches)} more matches beyond today's cap of {cap}", ""]
-    for m in matches[:20]:
-        lines.append(f"- {m['item']['title']} ({m['source']['label']}) {m['item']['link']}")
-    return "\n".join(lines)[:LABCHAN_LIMIT]
+def format_digest(matches, cap, limit=LABCHAN_LIMIT):
+    """Return (text, listed): as many titles as fit within the limit, then 'N more not listed'."""
+    head = f"Politics AI: {len(matches)} more matches beyond today's cap of {cap}\n"
+    lines, used = [], len(head)
+    for m in matches:
+        line = f"- {m['item']['title'][:120]} ({m['source']['label']}) {m['item']['link']}"
+        footer_room = 60  # room for the 'N more not listed' line
+        if used + len(line) + 1 + footer_room > limit:
+            break
+        lines.append(line)
+        used += len(line) + 1
+    text = head + "\n".join(lines)
+    if len(lines) < len(matches):
+        text += f"\n(+{len(matches) - len(lines)} more not listed; they will be reported next run)"
+    return text, len(lines)
 
 
 def send_labchan(message, local):

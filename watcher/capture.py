@@ -20,8 +20,14 @@ def capture(item, source, out_dir):
     try:
         html_text, final = fetch(item["link"])
         _, text = extract(html_text)
-        ok = len(text) > 200
-        body = text if ok else "(extraction failed: no readable text found)\n\n" + item.get("summary", "")
+        ok = len(text) >= 600
+        if ok:
+            body = text
+        elif text:
+            body = ("(partial: short text, possibly a paywall or excerpt)\n\n" + text
+                    + "\n\n" + item.get("summary", ""))
+        else:
+            body = "(extraction failed: no readable text found)\n\n" + item.get("summary", "")
     except Exception as e:  # network, HTTP, decoding
         final, ok = item["link"], False
         body = f"(extraction failed: {type(e).__name__}: {e})\n\n" + item.get("summary", "")

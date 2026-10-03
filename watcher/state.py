@@ -1,11 +1,16 @@
 """Seen-items store and failure counters (local JSON, never committed)."""
 import hashlib
 import json
+import os
 from pathlib import Path
 
 
 def item_hash(item):
-    raw = item.get("title", "") + "|" + item.get("summary", "")
+    """Hash of title and summary. Items flagged `_title_only` (sources whose summaries
+    change as stories cluster) hash the title alone, so they are not re-reported."""
+    raw = item.get("title", "")
+    if not item.get("_title_only"):
+        raw += "|" + item.get("summary", "")
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
@@ -37,5 +42,8 @@ class State:
             self.data["alerted_sources"].remove(source_id)
 
     def save(self):
+        """Write to a temp file, then swap it in, so a crash cannot leave a half-written file."""
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(json.dumps(self.data, indent=1), encoding="utf-8")
+        tmp = self.path.with_name(self.path.name + ".tmp")
+        tmp.write_text(json.dumps(self.data, indent=1), encoding="utf-8")
+        os.replace(tmp, self.path)

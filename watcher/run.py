@@ -43,6 +43,10 @@ def collect(sources, rules, state, baseline=False, log=print):
         state.record_ok(src["id"])
         count = 0
         for it in items:
+            if not it["id"]:
+                log(f"skip an item with no id and no link in {src['id']}: {it['title'][:60]!r}")
+                continue
+            it["_title_only"] = bool(src.get("hash_title_only"))
             status = state.status(it)
             if baseline:
                 state.mark(it)
@@ -90,24 +94,42 @@ def main(argv=None):
         return 0
 
     local = json.loads(Path(a.local).read_text(encoding="utf-8"))
-    for i, m in enumerate(found):
-        if i >= cap:
-            break
-        path, ok = capture(m["item"], m["source"], a.captured)
-        text = format_match(m, path.name, ok)
-        send_labchan(text, local)
-        send_email(f"Politics AI: {m['item']['title']}", text)
-    if len(found) > cap:
-        digest = format_digest(found[cap:], cap)
-        send_labchan(digest, local)
-        send_email("Politics AI: more matches", digest)
-    for sid in failed:
-        if state.data["failures"].get(sid, 0) >= 3 and sid not in state.data["alerted_sources"]:
-            send_labchan(f"Politics AI: source '{sid}' has failed {state.data['failures'][sid]} runs in a row.", local)
-            state.data["alerted_sources"].append(sid)
-    for it in new_items:  # only after every notification above succeeded
-        state.mark(it)
-    state.save()
+    found_ids = {m["item"]["id"] for m in found}
+    for it in new_items:  # new but not matching: nothing to send, so remember them now
+        if it["id"] not in found_ids:
+            state.mark(it)
+    email_warned = False
+
+    def email(subject, body):
+        """Email never aborts a run or undoes a LabChan send; a missing setup is said once."""
+        nonlocal email_warned
+        try:
+            if not send_email(subject, body) and not email_warned:
+                print("email not configured (POLITICS_SMTP_* variables); skipping email")
+                email_warned = True
+        except Exception as e:
+            print(f"email failed: {type(e).__name__}: {e}")
+
+    try:
+        for m in found[:cap]:
+            path, ok = capture(m["item"], m["source"], a.captured)
+            text = format_match(m, path.name, ok)
+            send_labchan(text, local)
+            state.mark(m["item"])  # remembered right after its own send succeeded
+            email(f"Politics AI: {m['item']['title']}", text)
+        rest = found[cap:]
+        if rest:
+            digest, listed = format_digest(rest, cap)
+            send_labchan(digest, local)
+            for m in rest[:listed]:  # items the digest did not have room for stay unseen
+                state.mark(m["item"])
+            email("Politics AI: more matches", digest)
+        for sid in failed:
+            if state.data["failures"].get(sid, 0) >= 3 and sid not in state.data["alerted_sources"]:
+                send_labchan(f"Politics AI: source '{sid}' has failed {state.data['failures'][sid]} runs in a row.", local)
+                state.data["alerted_sources"].append(sid)
+    finally:
+        state.save()  # always: keeps what was sent and the failure counters, even after an error
     return 0
 
 

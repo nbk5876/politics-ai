@@ -23,7 +23,8 @@
     "type": "feed",
     "url": "https://www.bing.com/news/search?q=%22White+House+Accord%22+AI+safety&format=rss",
     "require_keyword_in_title": true,
-    "enabled": true
+    "enabled": true,
+    "hash_title_only": true
   },
   {
     "id": "google-news-accord",
@@ -32,7 +33,8 @@
     "url": "https://news.google.com/rss/search?q=%22White+House+Accord%22+AI+safety+when:2d&hl=en-US&gl=US&ceid=US:en",
     "require_keyword_in_title": true,
     "enabled": false,
-    "note": "disabled: its links are redirects that cannot be opened by script; Bing News is used instead"
+    "note": "disabled: its links are redirects that cannot be opened by script; Bing News is used instead",
+    "hash_title_only": true
   },
   {
     "id": "anthropic-news",

@@ -131,7 +131,17 @@ class NotifyTests(unittest.TestCase):
 
     def test_digest_lists_titles(self):
         ms = [{"source": {"label": "S"}, "item": {"title": f"t{i}", "link": "u"}} for i in range(3)]
-        self.assertIn("t2", format_digest(ms, 1))
+        text, listed = format_digest(ms, 1)
+        self.assertIn("t2", text)
+        self.assertEqual(listed, 3)
+
+    def test_digest_over_limit_says_how_many_are_not_listed(self):
+        ms = [{"source": {"label": "S"}, "item": {"title": "x" * 100, "link": "https://e.com/" + "y" * 60}}
+              for _ in range(30)]
+        text, listed = format_digest(ms, 5, limit=1900)
+        self.assertLess(listed, 30)
+        self.assertLessEqual(len(text), 1900)
+        self.assertIn(f"+{30 - listed} more not listed", text)
 
 
 class CollectTests(unittest.TestCase):
@@ -200,6 +210,140 @@ class CollectTests(unittest.TestCase):
             runmod.main(["--sources", str(d / "s.json"), "--rules", str(d / "r.json"), "--local", str(d / "l.json"),
                          "--state", str(d / "seen.json"), "--captured", str(d / "cap"), "--live"])
             lab.assert_not_called()  # second run: everything already seen
+
+
+class ReviewFixTests(unittest.TestCase):
+    """One test per finding in Debbie's review of 2026-10-03."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.d = Path(self.tmp.name)
+        self.src = [{"id": "atom", "label": "Atom", "type": "feed", "url": "u"}]
+        (self.d / "s.json").write_text(json.dumps(self.src), encoding="utf-8")
+        (self.d / "l.json").write_text(json.dumps({"labchan_dir": str(self.d)}), encoding="utf-8")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _feed(self, n, title="accord and AI safety news"):
+        entries = "".join(
+            f'<entry><id>tag:n:{i}</id><title>{title} {i}</title><link href="https://e.com/{i}"/></entry>'
+            for i in range(n))
+        return '<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">' + entries + "</feed>"
+
+    def _args(self, sources="s.json"):
+        return ["--sources", str(self.d / sources), "--rules", str(self.d / "r.json"),
+                "--local", str(self.d / "l.json"), "--state", str(self.d / "seen.json"),
+                "--captured", str(self.d / "cap"), "--live"]
+
+    def _run(self, feed, rules, lab):
+        (self.d / "r.json").write_text(json.dumps(rules), encoding="utf-8")
+        with mock.patch.object(runmod, "fetch", lambda url: (feed, url)), \
+             mock.patch.object(runmod, "send_labchan", lab), \
+             mock.patch.object(runmod, "send_email", return_value=False), \
+             mock.patch.object(runmod, "capture", return_value=(self.d / "x.md", True)):
+            return runmod.main(self._args())
+
+    def test_1_failed_send_does_not_repeat_earlier_messages(self):
+        rules = {**RULES, "notify_cap": 10}
+        calls = []
+
+        def flaky(text, local):
+            calls.append(text)
+            if len(calls) == 2:
+                raise RuntimeError("discord down")
+
+        with self.assertRaises(RuntimeError):
+            self._run(self._feed(3), rules, flaky)
+        seen = json.loads((self.d / "seen.json").read_text(encoding="utf-8"))["seen"]
+        self.assertEqual(list(seen), ["tag:n:0"])  # saved despite the crash; item 1 only
+        calls.clear()
+        self._run(self._feed(3), rules, lambda text, local: calls.append(text))
+        self.assertEqual(len(calls), 2)  # items 2 and 3 only, no repeat of item 1
+
+    def test_1b_failure_counter_is_saved_when_a_send_crashes(self):
+        (self.d / "s2.json").write_text(json.dumps(self.src + [
+            {"id": "bad", "label": "Bad", "type": "feed", "url": "bad"}]), encoding="utf-8")
+        (self.d / "r.json").write_text(json.dumps({**RULES, "notify_cap": 10}), encoding="utf-8")
+        feed = self._feed(1)
+
+        def fetch(url):
+            if url == "bad":
+                raise OSError("down")
+            return feed, url
+
+        def boom(text, local):
+            raise RuntimeError("send failed")
+
+        with mock.patch.object(runmod, "fetch", fetch), mock.patch.object(runmod, "send_labchan", boom), \
+             mock.patch.object(runmod, "send_email", return_value=False), \
+             mock.patch.object(runmod, "capture", return_value=(self.d / "x.md", True)):
+            with self.assertRaises(RuntimeError):
+                runmod.main(self._args("s2.json"))
+        failures = json.loads((self.d / "seen.json").read_text(encoding="utf-8"))["failures"]
+        self.assertEqual(failures, {"bad": 1})
+
+    def test_2_whole_word_matching(self):
+        src = {"id": "x", "label": "X"}
+        according = {"title": "Chip regulation hearing", "summary": "According to officials, nothing changed."}
+        rules = {**RULES, "weak": ["accord", "regulation"], "min_weak": 2}
+        self.assertFalse(matches(according, src, rules)[0])  # 'According' is not the word 'accord'
+        self.assertTrue(matches({"title": "The accord on regulation", "summary": ""}, src, rules)[0])
+        prefix = {**RULES, "weak": ["collaborat*", "accord"], "min_weak": 2}
+        self.assertTrue(matches({"title": "A collaboration accord", "summary": ""}, src, prefix)[0])
+
+    def test_3_over_cap_items_not_in_digest_stay_unseen(self):
+        rules = {**RULES, "notify_cap": 2}
+        title = "accord and AI safety news " + "x" * 90
+        calls = []
+        self._run(self._feed(40, title=title), rules, lambda text, local: calls.append(text))
+        self.assertEqual(len(calls), 3)  # 2 individual messages + 1 digest
+        self.assertIn("more not listed", calls[-1])
+        seen = json.loads((self.d / "seen.json").read_text(encoding="utf-8"))["seen"]
+        self.assertLess(len(seen), 40)  # items without room in the digest are reported next run
+        calls.clear()
+        self._run(self._feed(40, title=title), rules, lambda text, local: calls.append(text))
+        self.assertGreater(len(calls), 0)
+
+    def test_4_title_only_hash_ignores_summary_changes(self):
+        st = State(self.d / "st.json")
+        a = {"id": "1", "title": "T", "summary": "first", "_title_only": True}
+        st.mark(a)
+        self.assertEqual(st.status({**a, "summary": "second"}), "seen")
+        b = {"id": "2", "title": "T", "summary": "first"}
+        st.mark(b)
+        self.assertEqual(st.status({**b, "summary": "second"}), "updated")
+
+    def test_5_email_failure_does_not_abort_or_undo_labchan_send(self):
+        (self.d / "r.json").write_text(json.dumps({**RULES, "notify_cap": 10}), encoding="utf-8")
+        calls = []
+        with mock.patch.object(runmod, "fetch", lambda url: (self._feed(2), url)), \
+             mock.patch.object(runmod, "send_labchan", lambda text, local: calls.append(text)), \
+             mock.patch.object(runmod, "send_email", side_effect=OSError("smtp down")), \
+             mock.patch.object(runmod, "capture", return_value=(self.d / "x.md", True)):
+            runmod.main(self._args())
+        self.assertEqual(len(calls), 2)
+        seen = json.loads((self.d / "seen.json").read_text(encoding="utf-8"))["seen"]
+        self.assertEqual(len(seen), 2)
+
+    def test_6_leftover_temp_file_does_not_break_state(self):
+        path = self.d / "seen.json"
+        (self.d / "seen.json.tmp").write_text("{ half written", encoding="utf-8")
+        st = State(path)  # no seen.json yet; the stray .tmp must be ignored
+        st.mark({"id": "1", "title": "T", "summary": ""})
+        st.save()
+        self.assertEqual(State(path).status({"id": "1", "title": "T", "summary": ""}), "seen")
+        self.assertFalse((self.d / "seen.json.tmp").exists())  # replaced into place
+
+    def test_7_item_with_no_id_or_link_is_skipped(self):
+        feed = "<rss><channel><item><title>accord and AI safety</title></item></channel></rss>"
+        logs = []
+        st = State(self.d / "st.json")
+        with mock.patch.object(runmod, "fetch", lambda url: (feed, url)):
+            found, _, new_items = runmod.collect(self.src, RULES, st, log=logs.append)
+        self.assertEqual(found, [])
+        self.assertEqual(new_items, [])
+        self.assertTrue(any("no id and no link" in line for line in logs))
 
 
 if __name__ == "__main__":

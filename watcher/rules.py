@@ -1,4 +1,5 @@
 """Decide whether a feed item matches the story."""
+import re
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
@@ -16,6 +17,17 @@ def parse_date(s):
     return None
 
 
+def term_pattern(term):
+    """Whole-word, case-insensitive pattern. A trailing * allows any word ending: 'collaborat*'."""
+    if term.endswith("*"):
+        return re.compile(r"\b" + re.escape(term[:-1]) + r"\w*", re.IGNORECASE)
+    return re.compile(r"\b" + re.escape(term) + r"\b", re.IGNORECASE)
+
+
+def _hits(terms, text):
+    return [t for t in terms if term_pattern(t).search(text)]
+
+
 def matches(item, source, rules, text=""):
     """Return (matched, reasons). Loose on purpose; tighten config/rules.json later.
 
@@ -23,6 +35,8 @@ def matches(item, source, rules, text=""):
       cannot be read are kept, so nothing is silently dropped.
     - `strong` phrases: any one is enough.
     - `weak` words: at least `min_weak` different ones are needed.
+    - Terms match whole words only ("accord" does not match "according"); end a term with *
+      to allow word endings ("collaborat*" matches "collaboration").
     - Sources that are not one named person's own feed set `require_keyword_in_title`, so the
       words must appear in the headline or summary, not only in the page body.
     """
@@ -31,10 +45,10 @@ def matches(item, source, rules, text=""):
         d = parse_date(item.get("published", ""))
         if d is not None and d < datetime.fromisoformat(since).replace(tzinfo=timezone.utc):
             return False, []
-    head = " ".join([item.get("title", ""), item.get("summary", "")]).lower()
-    hay = head if source.get("require_keyword_in_title") or not text else head + " " + text.lower()
-    strong = [k for k in rules.get("strong", []) if k.lower() in hay]
-    weak = [k for k in rules.get("weak", []) if k.lower() in hay]
+    head = " ".join([item.get("title", ""), item.get("summary", "")])
+    hay = head if source.get("require_keyword_in_title") or not text else head + " " + text
+    strong = _hits(rules.get("strong", []), hay)
+    weak = _hits(rules.get("weak", []), hay)
     ok = bool(strong) or len(weak) >= rules.get("min_weak", 2)
     reasons = []
     if strong:
