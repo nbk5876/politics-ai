@@ -4,6 +4,10 @@ Date: 2026-10-02
 Author: Jeff (HPZ2Mini). Owner: TB.
 Status: PROPOSED. Nothing is approved or built. Needs TB's explicit yes in the direct session, then Debbie's code review, before any build.
 
+![The team: lcRachel (ChatGPT Cloud), Jeff and Debbie (AI Lab)](images/welcome-splash.png)
+
+*The AI Lab team. lcRachel summarizes, Jeff designs and builds, Debbie reviews.*
+
 ## 1. Purpose
 TB wants to follow one story: a White House meeting on AI regulation, and an agreement among frontier model makers to work together on AI safety. If a named person (first example: Sam Altman) writes about it, the system should detect the article, save its text, and notify TB.
 
