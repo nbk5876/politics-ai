@@ -7,7 +7,16 @@ Status: PROPOSED. Nothing is approved or built. Needs TB's explicit yes in the d
 ## 1. Purpose
 TB wants to follow one story: a White House meeting on AI regulation, and an agreement among frontier model makers to work together on AI safety. If a named person (first example: Sam Altman) writes about it, the system should detect the article, save its text, and notify TB.
 
-The story's facts (who attended, who signed, what the agreement says) are TB's account and are not verified by Jeff. The system must treat them as claims to confirm against primary sources, not as facts.
+The story's facts started as TB's account. On 2026-10-02 TB supplied a primary source, which Jeff fetched and read (section 1a). Everything beyond that page is still unverified.
+
+## 1a. Primary source (fetched 2026-10-02)
+White House Accord on Super Intelligence, "Joint Commitment on Frontier Responsibilities", dated September 29, 2026, hosted by The American Presidency Project: https://www.presidency.ucsb.edu/documents/white-house-accord-super-intelligence (TB's link carried a `utm_source=chatgpt.com` tracking suffix, dropped here). Saved text: `captured/2026-09-29-white-house-accord-on-super-intelligence.txt`.
+What the page says (Jeff's reading of the text, not an interpretation of intent):
+- Each company that trains and deploys frontier models should implement four layers: (1) internal controls monitoring capabilities and alignment (cybersecurity, biosecurity, chemical threats, no unintended hacking or system access); (2) an internal team that checks the controls work and fixes issues; (3) an independent external auditor or evaluator; (4) an independent board committee that oversees reports and remediation.
+- The participating companies "will meet regularly to establish standards and best practices to improve the safety of their systems".
+- It may make sense to codify the steps into laws or regulations over time; the companies commit to the controls regardless.
+- Signature block lists: Donald J. Trump (President), Sundar Pichai (Google), Dario Amodei (Anthropic), Mark Zuckerberg (Meta), Greg Brockman (OpenAI), Elon Musk (xAI), Jensen Huang (Nvidia).
+Note for the watch list: the OpenAI signature on this page is Greg Brockman, not Sam Altman. Jeff does not know whether Altman attended the meeting; this page does not say. The watcher should therefore not be limited to Altman.
 
 ## 2. Scope
 In scope: watch a list of sources, match new items against rules, save matches, summarize with citations, notify TB.
@@ -50,7 +59,7 @@ lcRachel only acts when a message reaches her and she has no search or schedule 
 
 ## 8. Decisions needed from TB
 1. Sources: which to watch first; confirm X/Twitter is not required.
-2. People to watch: only Sam Altman, or also the other heads of the companies involved (TB names them).
+2. People and organizations to watch: the signature block names Pichai (Google), Amodei (Anthropic), Zuckerberg (Meta), Brockman (OpenAI), Musk (xAI) and Huang (Nvidia); TB mentioned Altman. Pick who, and whether to watch the company blogs as well.
 3. Notify channel: LabChan to TB, email, or both.
 4. Check frequency: for example every 30 minutes, hourly, or twice a day.
 5. Where the saved articles live (suggest the repo's `captured/` folder, not tracked in git).
