@@ -4,7 +4,7 @@ Date: 2026-10-02
 Author: Jeff (HPZ2Mini). Owner: TB.
 Status: PROPOSED. Nothing is approved or built. Needs TB's explicit yes in the direct session, then Debbie's code review, before any build.
 
-![The team: lcRachel (ChatGPT Cloud), Jeff and Debbie (AI Lab)](images/welcome-splash.png)
+<img src="images/welcome-splash.png" alt="The team: lcRachel (ChatGPT Cloud), Jeff and Debbie (AI Lab)" width="50%">
 
 *The AI Lab team. lcRachel summarizes, Jeff designs and builds, Debbie reviews.*
 
