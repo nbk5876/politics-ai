@@ -1,7 +1,7 @@
 # Politics AI watcher: design v0.1
 
 **Date:** 2026-10-02  
-**Status:** Proposal. Nothing is built yet.  
+**Status:** Design agreed, waiting for approval to build. Nothing is built yet.  
 **Written by:** Jeff
 
 <img src="images/welcome-splash.png" alt="The team: lcRachel (ChatGPT Cloud), Jeff and Debbie (AI Lab)" width="50%">
@@ -81,6 +81,28 @@ lcRachel only acts when a message reaches her and she has no search or schedule 
 4. Check frequency: for example every 30 minutes, hourly, or twice a day.
 5. Where the saved articles live (suggest the repo's `captured/` folder, not tracked in git).
 6. Whether Rachel summarizes automatically or only when TB asks.
+
+## 8a. Decisions made (2026-10-03)
+1. **Sources:** Sam Altman's blog feed; the OpenAI news feed; Dario Amodei's essays and the Anthropic news page; a Google News search for the story.
+2. **People to watch:** Altman and Amodei first, plus the other signers of the accord: Pichai (Google), Zuckerberg (Meta), Brockman (OpenAI), Musk (xAI), Huang (Nvidia).
+3. **Notify:** a LabChan message to the project owner, and an email to the owner's address. The address lives in a local config file and is never committed to this public repo.
+4. **How often:** twice a day.
+5. **Where articles are saved:** the repo's `captured/` folder (kept out of git).
+6. **Summaries:** lcRachel summarizes every match automatically.
+
+### Source check (2026-10-03, read-only)
+Jeff fetched each candidate to see what the watcher can actually read:
+- Sam Altman's blog: a working Atom feed (`posts.atom`). Easy.
+- OpenAI news: a working RSS feed (`rss.xml`). Easy.
+- Google News search: a working RSS feed for a search query, last 2 days. Easy.
+- Anthropic news: an ordinary web page, no feed found. The watcher would read the page and pick out new article links. Medium.
+- Dario Amodei's site: an ordinary web page, no feed (`feed.xml` returned 404). Same approach as Anthropic: watch the page for new essay links. Medium.
+Because three sources are feeds and two are pages, the first build handles feeds first and adds page-watching second.
+
+### What this changes in the design
+- Twice a day keeps the model cost tiny: at most a few lcRachel calls per run, far under her hourly ceiling.
+- With summaries automatic, the "unchecked" label stays on every summary until Jeff or Debbie spot-check it (section 7).
+- Still needed before any build: approval of this design by the project owner, Debbie's code review, and deploy approval, as in section 10.
 
 ## 9. Privacy
 The articles are public. The watcher stores URLs and article text only. It does not store TB's personal details. Any page TB later publishes from this goes through the usual names-and-personal-details flag first.
