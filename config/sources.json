@@ -1,0 +1,44 @@
+[
+  {
+    "id": "altman-blog",
+    "label": "Sam Altman's blog",
+    "type": "feed",
+    "url": "https://blog.samaltman.com/posts.atom",
+    "people": ["Sam Altman"],
+    "enabled": true
+  },
+  {
+    "id": "openai-news",
+    "label": "OpenAI news",
+    "type": "feed",
+    "url": "https://openai.com/news/rss.xml",
+    "require_keyword_in_title": true,
+    "enabled": true
+  },
+  {
+    "id": "google-news-accord",
+    "label": "Google News: White House Accord on AI safety",
+    "type": "feed",
+    "url": "https://news.google.com/rss/search?q=%22White+House+Accord%22+AI+safety+when:2d&hl=en-US&gl=US&ceid=US:en",
+    "require_keyword_in_title": true,
+    "enabled": true
+  },
+  {
+    "id": "anthropic-news",
+    "label": "Anthropic news page",
+    "type": "page",
+    "url": "https://www.anthropic.com/news",
+    "people": ["Dario Amodei"],
+    "enabled": false,
+    "note": "phase 2: ordinary web page, no feed"
+  },
+  {
+    "id": "amodei-essays",
+    "label": "Dario Amodei's essays",
+    "type": "page",
+    "url": "https://www.darioamodei.com/",
+    "people": ["Dario Amodei"],
+    "enabled": false,
+    "note": "phase 2: ordinary web page, no feed"
+  }
+]

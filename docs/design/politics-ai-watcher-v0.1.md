@@ -1,7 +1,7 @@
 # Politics AI watcher: design v0.1
 
 **Date:** 2026-10-02  
-**Status:** Design agreed, waiting for approval to build. Nothing is built yet.  
+**Status:** Design approved 2026-10-03. Feed watcher written and tested, dry-run only. Waiting for code review and deploy approval.  
 **Written by:** Jeff
 
 <img src="images/welcome-splash.png" alt="The team: lcRachel (ChatGPT Cloud), Jeff and Debbie (AI Lab)" width="50%">

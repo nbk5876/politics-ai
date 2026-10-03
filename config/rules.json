@@ -1,0 +1,23 @@
+{
+  "since": "2026-09-29",
+  "strong": [
+    "White House Accord",
+    "Accord on Super",
+    "Joint Commitment",
+    "Frontier Responsibilities"
+  ],
+  "weak": [
+    "AI safety",
+    "regulation",
+    "work together",
+    "collaborat",
+    "White House",
+    "agreement",
+    "accord",
+    "frontier",
+    "superintelligence",
+    "commitment"
+  ],
+  "min_weak": 2,
+  "notify_cap": 10
+}
