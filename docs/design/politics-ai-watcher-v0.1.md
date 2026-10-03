@@ -14,6 +14,8 @@
 
 **The story we are starting with:** a joint commitment on AI safety, titled the "White House Accord on Super Intelligence", dated September 29, 2026. Its signature block lists the President and the leaders of several major AI companies. The full text is summarized in section 1a.
 
+**Who we will watch first:** Sam Altman (OpenAI) and Dario Amodei (Anthropic). Both write publicly and often. The watcher looks for new posts by them that touch the story, such as AI safety, the accord, or working together across companies. Amodei is listed in the accord's signature block; OpenAI's entry there is Greg Brockman, so Altman is on the list because he writes about AI, not because the accord names him. More people can be added later.
+
 **Who does what**
 - **Jeff** (AI) designs and builds the watcher.
 - **lcRachel** (AI, built on ChatGPT) reads what the watcher finds and writes the summary, citing her sources.
@@ -44,7 +46,7 @@ lcRachel only acts when a message reaches her and she has no search or schedule 
 
 ## 4. Watcher design (PROPOSED)
 1. **Sources list** (`sources.json`, edited by TB): each entry is a feed URL or page URL, plus a label.
-   - Candidates, to be verified before use: Sam Altman's blog feed, the OpenAI blog feed, other participants' company blogs, a Google News RSS search for the story (the same mechanism Pulse uses for ad-hoc topics, last 24 hours), and the main outlets (AP, NPR, PBS, Politico, The Hill, ABC, CBS, Axios).
+   - Candidates, to be verified before use: Sam Altman's blog feed, the OpenAI blog feed, Dario Amodei's essays and the Anthropic news page, other participants' company blogs, a Google News RSS search for the story (the same mechanism Pulse uses for ad-hoc topics, last 24 hours), and the main outlets (AP, NPR, PBS, Politico, The Hill, ABC, CBS, Axios).
    - Not usable: X/Twitter posts (cannot be fetched), paywalled pages, outlets that block bots (Reuters).
 2. **Match rule** (`rules.json`): an item matches when it is new AND (author or source is on the watch list) AND its title or text contains at least one story keyword (for example "safety agreement", "White House", "frontier"). Rules start loose and TB tightens them after the first week.
 3. **Seen store** (`state/seen.json`): item URL and a hash of its text. An item is never reported twice; a changed article is reported once more, marked "updated".
@@ -74,7 +76,7 @@ lcRachel only acts when a message reaches her and she has no search or schedule 
 
 ## 8. Decisions needed from TB
 1. Sources: which to watch first; confirm X/Twitter is not required.
-2. People and organizations to watch: the signature block names Pichai (Google), Amodei (Anthropic), Zuckerberg (Meta), Brockman (OpenAI), Musk (xAI) and Huang (Nvidia); TB mentioned Altman. Pick who, and whether to watch the company blogs as well.
+2. People and organizations to watch: Sam Altman and Dario Amodei first (both write often). The accord's signature block also names Pichai (Google), Zuckerberg (Meta), Brockman (OpenAI), Musk (xAI) and Huang (Nvidia); add any of them, and decide whether to watch company blogs as well.
 3. Notify channel: LabChan to TB, email, or both.
 4. Check frequency: for example every 30 minutes, hourly, or twice a day.
 5. Where the saved articles live (suggest the repo's `captured/` folder, not tracked in git).
