@@ -43,6 +43,14 @@ Politics AI is a small AI Lab project that follows one news story so nobody has 
 | Code review | Debbie reviewed four times; all findings closed |
 | Tests | 91 unit tests, no network needed |
 
+## How lcRachel reads a page
+
+<img src="images/lcRachel-web-browse-flow.png" alt="The Rachel part of the LabChan architecture: Discord bot, rachel_rx_listener.py, rachel_adapter.py and its helper files memory.py, rachel_browse.py, rachel_chart.py, web_fetch.py and rachel_image_gen.py" width="100%">
+
+*A cropped view of the LabChan architecture. The Discord bot hands each message to `rachel_rx_listener.py`; `rachel_adapter.py` decides what to do with it and calls the helper files in `/listener/`; the model itself is lcRachel on ChatGPT Cloud, and her reply goes back out through the TX side.*
+
+lcRachel is only a model; the code around her does the work. For a page, the adapter uses `web_fetch.py` (the `fetch-page:` command) to download the text, or `rachel_browse.py` (the `browse:` command) to drive a read-only browser limited to core3.com. Since 2026-10-04 a `fetch-page:` request starts from a clean slate, with no earlier conversation, and the bridge adds the grounding rules (see `rachel-summary-instructions-v0.2.md`).
+
 ## 1a. Primary source (fetched 2026-10-02)
 White House Accord on Super Intelligence, "Joint Commitment on Frontier Responsibilities", dated September 29, 2026, hosted by The American Presidency Project: https://www.presidency.ucsb.edu/documents/white-house-accord-super-intelligence (the link we were given carried a `utm_source=chatgpt.com` tracking suffix, dropped here). Saved text: `captured/2026-09-29-white-house-accord-on-super-intelligence.txt` (kept out of git).
 
