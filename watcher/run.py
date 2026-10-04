@@ -17,7 +17,7 @@ from pathlib import Path
 from .capture import capture
 from .feeds import parse_feed
 from .fetch import fetch
-from .page import record, render
+from .page import record, render, valid_analytics_id
 from .notify import format_digest, format_match, send_email, send_labchan
 from .publish import publish_page
 from .rules import matches
@@ -79,6 +79,8 @@ def main(argv=None):
                     help="where to write the shareable page (a local file; uploading is a separate, approved step)")
     ap.add_argument("--cap", type=int, default=None,
                     help="send at most this many individual messages; the rest go in one digest (default: notify_cap in rules.json)")
+    ap.add_argument("--analytics-id", default=None,
+                    help="Google Analytics 4 measurement ID for the page (default: analytics_id in config/local.json)")
     ap.add_argument("--baseline", action="store_true")
     ap.add_argument("--live", action="store_true")
     a = ap.parse_args(argv)
@@ -99,10 +101,21 @@ def main(argv=None):
         print(f"- [{m['status']}] {m['item']['title']}\n    {m['source']['label']} | {m['item']['link']}\n    {'; '.join(m['reasons'])}")
     now = datetime.now(timezone.utc)
 
+    def analytics_id():
+        mid = a.analytics_id
+        if mid is None:  # the local settings file is optional in a dry run
+            try:
+                mid = json.loads(Path(a.local).read_text(encoding="utf-8")).get("analytics_id")
+            except (OSError, ValueError):
+                mid = None
+        if mid and not valid_analytics_id(mid):
+            print(f"ignoring analytics_id {mid!r}: not a valid G- measurement ID")
+        return mid
+
     def write_page(extra=()):
         recs = state.data["archive"] + [r for r in extra if all(r["id"] != x["id"] for x in state.data["archive"])]
         Path(a.page).parent.mkdir(parents=True, exist_ok=True)
-        Path(a.page).write_text(render(recs, now), encoding="utf-8")
+        Path(a.page).write_text(render(recs, now, analytics_id=analytics_id()), encoding="utf-8")
         print(f"page written: {a.page}")
 
     if not a.live:

@@ -3,6 +3,9 @@
 Article text is never put on the page (it stays in captured/). Everything that comes from a
 feed is HTML-escaped, and only http(s) links are allowed.
 """
+import base64
+import hashlib
+import re
 from datetime import datetime, timedelta, timezone
 from html import escape
 
@@ -69,8 +72,37 @@ def select(records, now, days=30):
     return [r for _, r in out]
 
 
-def render(records, now=None, days=30):
+def valid_analytics_id(value):
+    """A Google Analytics 4 measurement ID such as G-ABC123XYZ0, or None. Anything else is ignored,
+    so a typo in the settings can never put odd text into the page."""
+    v = (value or "").strip()
+    return v if re.fullmatch(r"G-[A-Z0-9]{6,14}", v) else None
+
+
+def analytics_parts(mid):
+    """(head markup, content-security-policy) for Google Analytics, or ('', strict policy).
+
+    The policy allows only Google's analytics hosts. The small inline start-up script is allowed by its
+    hash, not by 'unsafe-inline', so no other inline script can run."""
+    strict = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"
+    if not mid:
+        return "", strict
+    inline = ("window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}"
+              f"gtag('js',new Date());gtag('config','{mid}');")
+    digest = base64.b64encode(hashlib.sha256(inline.encode("utf-8")).digest()).decode()
+    csp = (strict + f"; script-src 'sha256-{digest}' https://www.googletagmanager.com"
+           "; connect-src https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com"
+           "; img-src https://*.google-analytics.com https://*.googletagmanager.com")
+    markup = (f'<script async src="https://www.googletagmanager.com/gtag/js?id={mid}"></script>\n'
+              f"<script>{inline}</script>")
+    return markup, csp
+
+
+def render(records, now=None, days=30, analytics_id=None):
     now = now or datetime.now(timezone.utc)
+    mid = valid_analytics_id(analytics_id)
+    tag, csp = analytics_parts(mid)
+    notice = " This page uses Google Analytics to count visits." if mid else ""
     rows = select(records, now, days)
     body = []
     for r in rows:
@@ -90,8 +122,9 @@ def render(records, now=None, days=30):
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="{csp}">
 <title>{TITLE}</title>
+{tag}
 <style>{CSS}</style>
 </head>
 <body>
@@ -101,7 +134,7 @@ def render(records, now=None, days=30):
 <div class="note">Links to news and company posts about the White House Accord on Super Intelligence (September 29, 2026) and
 related AI safety announcements. Found automatically by a small AI Lab project, <a href="{REPO}">Politics AI</a>:
 headlines and links only, with the source named. A link here is not an endorsement, and the headlines are the
-publishers' own words.</div>
+publishers' own words.{notice}</div>
 {table}
 <footer>Politics AI watcher, an AI Lab project. Source code and design: <a href="{REPO}">{REPO}</a></footer>
 </div>

@@ -548,5 +548,52 @@ class SecondReviewTests(unittest.TestCase):
             self.assertNotIn("a1", data["seen"])  # not marked, so it is reported again, not lost
 
 
+class AnalyticsTests(unittest.TestCase):
+    MID = "G-291QNWCB1H"
+
+    def test_id_is_validated(self):
+        from watcher.page import valid_analytics_id
+        self.assertEqual(valid_analytics_id(" " + self.MID + " "), self.MID)
+        for bad in ("", None, "UA-12345-1", "g-lowercase1", "G-12", "G-ABC123'); alert(1);//", "G-ABC<script>"):
+            self.assertIsNone(valid_analytics_id(bad), bad)
+
+    def test_no_tag_and_strict_policy_when_not_configured(self):
+        from watcher.page import render
+        html = render([])
+        self.assertNotIn("googletagmanager", html)
+        self.assertNotIn("script-src", html)
+        self.assertNotIn("Google Analytics", html)
+
+    def test_invalid_id_adds_nothing_to_the_page(self):
+        from watcher.page import render
+        html = render([], analytics_id="G-ABC123'); alert(1);//")
+        self.assertNotIn("alert(1)", html)
+        self.assertNotIn("googletagmanager", html)
+
+    def test_tag_notice_and_policy_when_configured(self):
+        import base64, hashlib, re
+        from watcher.page import render
+        html = render([], analytics_id=self.MID)
+        self.assertIn(f"https://www.googletagmanager.com/gtag/js?id={self.MID}", html)
+        self.assertIn("This page uses Google Analytics to count visits.", html)
+        inline = re.search(r"<script>(.*?)</script>", html, re.S).group(1)
+        digest = base64.b64encode(hashlib.sha256(inline.encode("utf-8")).digest()).decode()
+        csp = re.search(r'Content-Security-Policy" content="([^"]+)', html).group(1)
+        self.assertIn(f"script-src 'sha256-{digest}' https://www.googletagmanager.com", csp)  # the inline script is allowed by hash
+        self.assertNotIn("unsafe-inline'; script", csp)
+        self.assertNotIn("script-src 'unsafe-inline'", csp)
+        self.assertIn("default-src 'none'", csp)  # everything else is still blocked
+        self.assertEqual(html.count("<script"), 2)  # the Google loader and the one start-up script, nothing else
+
+    def test_run_passes_the_id_from_the_flag_to_the_page(self):
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            (d / "s.json").write_text("[]", encoding="utf-8")
+            (d / "r.json").write_text(json.dumps(RULES), encoding="utf-8")
+            runmod.main(["--sources", str(d / "s.json"), "--rules", str(d / "r.json"), "--state", str(d / "seen.json"),
+                         "--local", str(d / "none.json"), "--page", str(d / "p.html"), "--analytics-id", self.MID])
+            self.assertIn(self.MID, (d / "p.html").read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()
