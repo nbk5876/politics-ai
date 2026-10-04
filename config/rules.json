@@ -20,5 +20,11 @@
     "superintelligence"
   ],
   "min_weak": 2,
-  "notify_cap": 10
+  "notify_cap": 10,
+  "require_context": [
+    "AI",
+    "artificial intelligence",
+    "superintelligence",
+    "super intelligence"
+  ]
 }

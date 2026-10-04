@@ -23,7 +23,8 @@ def resolve_link(link):
     (Google News links cannot be unwrapped this way, which is why Bing is the search source.)
     """
     u = urlparse(link)
-    if u.netloc.endswith("bing.com") and u.path.startswith("/news/apiclick"):
+    host = u.hostname or ""
+    if (host == "bing.com" or host.endswith(".bing.com")) and u.path.startswith("/news/apiclick"):
         real = parse_qs(u.query).get("url", [""])[0]
         if real.startswith("http"):
             return real

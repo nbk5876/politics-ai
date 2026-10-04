@@ -34,7 +34,8 @@ def matches(item, source, rules, text=""):
     - `since` (YYYY-MM-DD): items published before this date never match. Items whose date
       cannot be read are kept, so nothing is silently dropped.
     - `strong` phrases: any one is enough.
-    - `weak` words: at least `min_weak` different ones are needed.
+    - `weak` words: at least `min_weak` different ones are needed, and, when `require_context` is set,
+      at least one context word too (so a car model or an airline with the word 'regulation' is not a match).
     - Terms match whole words only ("accord" does not match "according"); end a term with *
       to allow word endings ("collaborat*" matches "collaboration").
     - Sources that are not one named person's own feed set `require_keyword_in_title`, so the
@@ -49,7 +50,9 @@ def matches(item, source, rules, text=""):
     hay = head if source.get("require_keyword_in_title") or not text else head + " " + text
     strong = _hits(rules.get("strong", []), hay)
     weak = _hits(rules.get("weak", []), hay)
-    ok = bool(strong) or len(weak) >= rules.get("min_weak", 2)
+    context = rules.get("require_context")
+    has_context = (not context) or bool(_hits(context, hay))  # e.g. the word AI must appear
+    ok = bool(strong) or (len(weak) >= rules.get("min_weak", 2) and has_context)
     reasons = []
     if strong:
         reasons.append("phrases: " + ", ".join(strong[:3]))

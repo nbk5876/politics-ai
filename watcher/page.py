@@ -43,8 +43,16 @@ def record(m, now):
             "first_seen": now.isoformat(timespec="seconds")}
 
 
-def _when(rec):
-    return parse_date(rec.get("published", "")) or parse_date(rec.get("first_seen", ""))
+def _when(rec, now=None):
+    """Published date, or first-seen date. A published date in the future is not believed: the row
+    is dated by when we first saw it, so a bad date cannot pin it on top (or keep it) forever."""
+    now = now or datetime.now(timezone.utc)
+    pub, seen = parse_date(rec.get("published", "")), parse_date(rec.get("first_seen", ""))
+    if pub is None:
+        return seen
+    if pub > now:
+        return seen if seen is not None and seen <= now else now
+    return pub
 
 
 def select(records, now, days=30):
@@ -52,7 +60,7 @@ def select(records, now, days=30):
     cutoff = now - timedelta(days=days)
     seen, out = set(), []
     for r in records:
-        d = _when(r)
+        d = _when(r, now)
         if r["id"] in seen or (d is not None and d < cutoff):
             continue
         seen.add(r["id"])
@@ -66,7 +74,7 @@ def render(records, now=None, days=30):
     rows = select(records, now, days)
     body = []
     for r in rows:
-        d = _when(r)
+        d = _when(r, now)
         link = safe_url(r["link"])
         title = escape(r["title"] or r["link"])
         head = (f'<a href="{escape(link, quote=True)}" target="_blank" rel="noopener noreferrer nofollow">{title}</a>'
@@ -82,6 +90,7 @@ def render(records, now=None, days=30):
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <title>{TITLE}</title>
 <style>{CSS}</style>
 </head>

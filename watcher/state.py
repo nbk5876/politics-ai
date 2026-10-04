@@ -32,9 +32,24 @@ class State:
         self.data["seen"][item["id"]] = item_hash(item)
 
     def archive(self, rec):
-        """Remember a notified match (headline, link, source, date: no article text) for the page."""
-        if all(r["id"] != rec["id"] for r in self.data["archive"]):
-            self.data["archive"].append(rec)
+        """Remember a notified match (headline, link, source, date: no article text) for the page.
+        An 'updated' item replaces its older record, so the page shows the current headline."""
+        for i, r in enumerate(self.data["archive"]):
+            if r["id"] == rec["id"]:
+                self.data["archive"][i] = {**r, "title": rec["title"], "reasons": rec["reasons"]}
+                return
+        self.data["archive"].append(rec)
+
+    def prune_archive(self, now, days=90):
+        """Drop archive records first seen more than `days` days ago (the page only shows 30)."""
+        from datetime import timedelta
+        from .rules import parse_date
+        keep = []
+        for r in self.data["archive"]:
+            d = parse_date(r.get("first_seen", ""))
+            if d is None or d >= now - timedelta(days=days):
+                keep.append(r)
+        self.data["archive"] = keep
 
     def record_failure(self, source_id):
         n = self.data["failures"].get(source_id, 0) + 1

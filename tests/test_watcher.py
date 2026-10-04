@@ -418,5 +418,95 @@ class PageTests(unittest.TestCase):
             self.assertNotIn("summary", archive[0])
 
 
+class SecondReviewTests(unittest.TestCase):
+    """Findings from Debbie's re-check and her review of the links page (2026-10-03/04)."""
+
+    @staticmethod
+    def real_rules():
+        return json.loads((Path(__file__).resolve().parent.parent / "config" / "rules.json").read_text(encoding="utf-8"))
+
+    def test_generic_words_need_ai_context(self):
+        rules, src = self.real_rules(), {"id": "x", "label": "X"}
+        for title in ("Honda Accord recall tied to new regulation", "Frontier Airlines faces new regulation"):
+            self.assertFalse(matches({"title": title, "summary": ""}, src, rules)[0], title)
+        self.assertTrue(matches({"title": "White House weighs AI regulation", "summary": ""}, src, rules)[0])
+        self.assertTrue(matches({"title": "NVIDIA OpenShell is out", "summary": ""}, src, rules)[0])  # strong: no context needed
+
+    def test_fetch_refuses_non_http_urls(self):
+        from watcher.fetch import fetch
+        for url in ("file:///etc/passwd", "ftp://example.com/x", "javascript:alert(1)"):
+            with self.assertRaises(ValueError):
+                fetch(url)
+
+    def test_bing_host_must_match_exactly(self):
+        from watcher.feeds import resolve_link
+        real = "https%3a%2f%2fexample.com%2fa"
+        for host in ("www.bing.com", "bing.com"):
+            self.assertEqual(resolve_link(f"http://{host}/news/apiclick.aspx?url={real}"), "https://example.com/a")
+        evil = f"http://evilbing.com/news/apiclick.aspx?url={real}"
+        self.assertEqual(resolve_link(evil), evil)
+
+    def test_future_date_cannot_pin_a_row_forever(self):
+        from datetime import datetime, timedelta, timezone
+        from watcher.page import select
+        now = datetime(2026, 10, 3, tzinfo=timezone.utc)
+        rec = {"id": "f", "title": "T", "link": "https://e.com", "source": "S", "published": "2099-01-01T00:00:00Z",
+               "reasons": "", "first_seen": "2026-10-03T00:00:00+00:00"}
+        self.assertEqual(len(select([rec], now, days=30)), 1)
+        self.assertEqual(len(select([rec], now + timedelta(days=40), days=30)), 0)  # expires like any other row
+
+    def test_page_has_content_security_policy(self):
+        from watcher.page import render
+        self.assertIn("Content-Security-Policy", render([]))
+
+    def test_archive_updates_title_and_prunes_old_records(self):
+        from datetime import datetime, timedelta, timezone
+        st = State(Path(tempfile.gettempdir()) / "politics-archive-test.json")
+        st.data["archive"] = []
+        old = {"id": "1", "title": "Old title", "reasons": "a", "first_seen": "2026-10-01T00:00:00+00:00"}
+        st.archive(old)
+        st.archive({**old, "title": "New title", "reasons": "b"})
+        self.assertEqual([r["title"] for r in st.data["archive"]], ["New title"])
+        st.prune_archive(datetime(2027, 1, 15, tzinfo=timezone.utc), days=90)
+        self.assertEqual(st.data["archive"], [])
+
+    def _live(self, td, feed, patches=()):
+        d = Path(td)
+        (d / "s.json").write_text(json.dumps([{"id": "s", "label": "S", "type": "feed", "url": "u"}]), encoding="utf-8")
+        (d / "r.json").write_text(json.dumps({**RULES, "notify_cap": 5}), encoding="utf-8")
+        (d / "l.json").write_text(json.dumps({"labchan_dir": str(d)}), encoding="utf-8")
+        args = ["--sources", str(d / "s.json"), "--rules", str(d / "r.json"), "--local", str(d / "l.json"),
+                "--state", str(d / "seen.json"), "--captured", str(d / "cap"), "--page", str(d / "p.html"), "--live"]
+        from contextlib import ExitStack
+        with ExitStack() as stack:
+            stack.enter_context(mock.patch.object(runmod, "fetch", lambda url: (feed, url)))
+            lab = stack.enter_context(mock.patch.object(runmod, "send_labchan"))
+            stack.enter_context(mock.patch.object(runmod, "send_email", return_value=False))
+            stack.enter_context(mock.patch.object(runmod, "capture", return_value=(d / "x.md", True)))
+            for patch in patches:
+                stack.enter_context(patch)
+            runmod.main(args)
+        return d, lab
+
+    FEED = ('<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><entry><id>a1</id>'
+            '<title>The White House Accord explained</title><link href="https://e.com/1"/>'
+            '<published>2026-10-03T08:00:00Z</published></entry></feed>')
+
+    def test_page_failure_does_not_lose_the_seen_store(self):
+        with tempfile.TemporaryDirectory() as td:
+            d, lab = self._live(td, self.FEED, [mock.patch.object(runmod, "render", side_effect=RuntimeError("render broke"))])
+            self.assertEqual(lab.call_count, 1)
+            seen = json.loads((d / "seen.json").read_text(encoding="utf-8"))["seen"]
+            self.assertIn("a1", seen)  # sent item is remembered, so the next run will not re-send it
+
+    def test_a_crash_between_archive_and_mark_repeats_rather_than_loses(self):
+        with tempfile.TemporaryDirectory() as td:
+            with self.assertRaises(RuntimeError):
+                self._live(td, self.FEED, [mock.patch.object(State, "mark", side_effect=RuntimeError("killed"))])
+            data = json.loads((Path(td) / "seen.json").read_text(encoding="utf-8"))
+            self.assertEqual([r["id"] for r in data["archive"]], ["a1"])  # on the page
+            self.assertNotIn("a1", data["seen"])  # not marked, so it is reported again, not lost
+
+
 if __name__ == "__main__":
     unittest.main()

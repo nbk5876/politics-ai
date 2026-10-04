@@ -128,24 +128,28 @@ def main(argv=None):
             path, ok = capture(m["item"], m["source"], a.captured)
             text = format_match(m, path.name, ok)
             send_labchan(text, local)
+            state.archive(record(m, now))  # archive first: a failure repeats an item rather than losing it
             state.mark(m["item"])  # remembered right after its own send succeeded
-            state.archive(record(m, now))
             email(f"Politics AI: {m['item']['title']}", text)
         rest = found[cap:]
         if rest:
             digest, listed = format_digest(rest, cap)
             send_labchan(digest, local)
             for m in rest[:listed]:  # items the digest did not have room for stay unseen
-                state.mark(m["item"])
                 state.archive(record(m, now))
+                state.mark(m["item"])
             email("Politics AI: more matches", digest)
         for sid in failed:
             if state.data["failures"].get(sid, 0) >= 3 and sid not in state.data["alerted_sources"]:
                 send_labchan(f"Politics AI: source '{sid}' has failed {state.data['failures'][sid]} runs in a row.", local)
                 state.data["alerted_sources"].append(sid)
     finally:
-        write_page()
-        state.save()  # always: keeps what was sent and the failure counters, even after an error
+        state.prune_archive(now)
+        state.save()  # first: what was sent must be remembered even if the page cannot be built
+        try:
+            write_page()
+        except Exception as e:
+            print(f"page failed: {type(e).__name__}: {e}")  # always: keeps what was sent and the failure counters, even after an error
     return 0
 
 
