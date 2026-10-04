@@ -35,7 +35,7 @@ def format_digest(matches, cap, limit=LABCHAN_LIMIT):
     head = f"Politics AI: {len(matches)} more matches beyond today's cap of {cap}\n"
     lines, used = [], len(head)
     for m in matches:
-        line = f"- {m['item']['title'][:120]} ({m['source']['label']}) {m['item']['link']}"
+        line = f"- {m['item']['title'][:90]} {m['item']['link']}"
         footer_room = 60  # room for the 'N more not listed' line
         if used + len(line) + 1 + footer_room > limit:
             break

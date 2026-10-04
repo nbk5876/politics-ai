@@ -76,6 +76,8 @@ def main(argv=None):
     ap.add_argument("--captured", default=str(ROOT / "captured"))
     ap.add_argument("--page", default=str(ROOT / "previews" / "ai-safety-topic-links.html"),
                     help="where to write the shareable page (a local file; uploading is a separate, approved step)")
+    ap.add_argument("--cap", type=int, default=None,
+                    help="send at most this many individual messages; the rest go in one digest (default: notify_cap in rules.json)")
     ap.add_argument("--baseline", action="store_true")
     ap.add_argument("--live", action="store_true")
     a = ap.parse_args(argv)
@@ -90,7 +92,7 @@ def main(argv=None):
         print("baseline saved; nothing reported")
         return 0
 
-    cap = rules.get("notify_cap", 10)
+    cap = a.cap if a.cap is not None else rules.get("notify_cap", 10)
     print(f"\n{len(found)} match(es)" + ("" if a.live else " (dry run: nothing sent, saved or remembered)"))
     for m in found:
         print(f"- [{m['status']}] {m['item']['title']}\n    {m['source']['label']} | {m['item']['link']}\n    {'; '.join(m['reasons'])}")
