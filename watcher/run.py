@@ -44,6 +44,12 @@ def collect(sources, rules, state, baseline=False, log=print):
             log(f"FAIL {src['id']} ({n} in a row): {type(e).__name__}: {e}")
             continue
         state.record_ok(src["id"])
+        # A feed that comes back empty (or as a blank/error page) is not a failure on one run, but 3 in a row is
+        # worth an alert; the counter lives next to the failure counters under "empty:<id>".
+        if items:
+            state.record_ok("empty:" + src["id"])
+        else:
+            state.record_failure("empty:" + src["id"])
         count = 0
         for it in items:
             if not it["id"]:
@@ -156,6 +162,10 @@ def main(argv=None):
                 state.archive(record(m, now))
                 state.mark(m["item"])
             email("Politics AI: more matches", digest)
+        for key, n in list(state.data["failures"].items()):
+            if key.startswith("empty:") and n >= 3 and key not in state.data["alerted_sources"]:
+                send_labchan(f"Politics AI: source '{key[6:]}' returned 0 items {n} runs in a row.", local)
+                state.data["alerted_sources"].append(key)
         for sid in failed:
             if state.data["failures"].get(sid, 0) >= 3 and sid not in state.data["alerted_sources"]:
                 send_labchan(f"Politics AI: source '{sid}' has failed {state.data['failures'][sid]} runs in a row.", local)

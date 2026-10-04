@@ -565,10 +565,38 @@ class ComboRuleTests(unittest.TestCase):
         for title in no:
             self.assertFalse(matches({"title": title, "summary": ""}, src, rules)[0], title)
 
+    def test_empty_combos_groups_and_terms_never_match(self):
+        from watcher.rules import _combo_hits
+        for combos in ([[]], [[""]], [["OpenAI|", "agent*"]], [["|"]], [[" | "]]):
+            self.assertEqual(_combo_hits(combos, "OpenAI  agent  ..  anything"), [] if combos != [["OpenAI|", "agent*"]] else ["OpenAI + agent*"], combos)
+        rules = {**RULES, "strong": [""], "strong_combos": [[]], "weak": ["", " "], "require_context": [""]}
+        src = {"id": "x", "label": "X"}
+        self.assertFalse(matches({"title": "Totally  unrelated..  headline", "summary": ""}, src, rules)[0])
+
     def test_combo_needs_whole_words(self):
         from watcher.rules import _combo_hits
         self.assertEqual(_combo_hits([["OpenAI|Anthropic", "agent*"]], "OpenAI reagent"), [])
         self.assertEqual(_combo_hits([["OpenAI|Anthropic", "agent*"]], "OpenAI agents everywhere"), ["OpenAI + agent*"])
+
+
+class EmptyFeedAlertTests(unittest.TestCase):
+    def test_three_empty_runs_in_a_row_alert_once_and_a_good_run_clears_it(self):
+        empty = '<?xml version="1.0"?><rss><channel></channel></rss>'
+        good = ('<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><entry><id>a</id><title>Unrelated</title>'
+                '<link href="https://e.com/a"/></entry></feed>')
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            (d / "s.json").write_text(json.dumps([{"id": "s", "label": "S", "type": "feed", "url": "u"}]), encoding="utf-8")
+            (d / "r.json").write_text(json.dumps(RULES), encoding="utf-8")
+            (d / "l.json").write_text(json.dumps({"labchan_dir": str(d)}), encoding="utf-8")
+            args = ["--sources", str(d / "s.json"), "--rules", str(d / "r.json"), "--local", str(d / "l.json"),
+                    "--state", str(d / "seen.json"), "--captured", str(d / "cap"), "--page", str(d / "p.html"), "--live"]
+            alerts = []
+            for feed in (empty, empty, empty, empty, good, empty, empty, empty):
+                with mock.patch.object(runmod, "fetch", lambda url, f=feed: (f, url)),                      mock.patch.object(runmod, "send_labchan") as lab,                      mock.patch.object(runmod, "send_email", return_value=False):
+                    runmod.main(args)
+                alerts.append(any("returned 0 items" in str(c) for c in lab.call_args_list))
+            self.assertEqual(alerts, [False, False, True, False, False, False, False, True])
 
 
 class AnalyticsTests(unittest.TestCase):

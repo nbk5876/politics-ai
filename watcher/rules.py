@@ -29,17 +29,22 @@ def term_pattern(term):
 
 
 def _hits(terms, text):
-    return [t for t in terms if term_pattern(t).search(text)]
+    """Terms found in the text. Empty or blank terms are ignored: an empty pattern would match everything."""
+    return [t for t in terms if isinstance(t, str) and t.strip() and term_pattern(t).search(text)]
 
 
 def _combo_hits(combos, text):
     """Each combo is a list of groups; a group is words separated by | (any one will do).
-    A combo matches when every group has a hit, e.g. ["OpenAI|Anthropic", "agent*|sandbox"]."""
+    A combo matches when every group has a hit, e.g. ["OpenAI|Anthropic", "agent*|sandbox"].
+    An empty combo, an empty group, or an empty word (a stray trailing |) never matches anything."""
     out = []
     for combo in combos:
+        if not isinstance(combo, list) or not combo:
+            continue
         found = []
         for group in combo:
-            hit = next((t for t in group.split("|") if term_pattern(t).search(text)), None)
+            terms = [t.strip() for t in str(group).split("|") if t.strip()]
+            hit = next((t for t in terms if term_pattern(t).search(text)), None)
             if hit is None:
                 break
             found.append(hit)
