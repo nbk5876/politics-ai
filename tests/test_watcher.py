@@ -356,5 +356,67 @@ class ReviewFixTests(unittest.TestCase):
         self.assertTrue(any("no id and no link" in line for line in logs))
 
 
+class PageTests(unittest.TestCase):
+    NOW = None
+
+    def setUp(self):
+        from datetime import datetime, timezone
+        self.now = datetime(2026, 10, 3, 12, 0, tzinfo=timezone.utc)
+
+    def rec(self, i, title="Headline", link="https://example.com/a", published="2026-10-02T00:00:00Z", **kw):
+        return {"id": f"id{i}", "title": title, "link": link, "source": "Src", "published": published,
+                "reasons": "phrases: x", "first_seen": "2026-10-03T00:00:00+00:00", **kw}
+
+    def test_newest_first_last_30_days_and_one_row_per_id(self):
+        from watcher.page import select
+        recs = [self.rec(1, published="2026-09-20T00:00:00Z"), self.rec(2, published="2026-10-02T00:00:00Z"),
+                self.rec(3, published="2026-08-01T00:00:00Z"), self.rec(2, published="2026-10-02T00:00:00Z")]
+        out = select(recs, self.now, days=30)
+        self.assertEqual([r["id"] for r in out], ["id2", "id1"])  # id3 is older than 30 days, id2 once
+
+    def test_titles_are_escaped_and_unsafe_links_are_not_linked(self):
+        from watcher.page import render
+        html = render([self.rec(1, title='<script>alert(1)</script> & "quotes"'),
+                       self.rec(2, title="Bad link", link="javascript:alert(1)")], self.now)
+        self.assertNotIn("<script>alert(1)</script>", html)
+        self.assertIn("&lt;script&gt;", html)
+        self.assertNotIn('href="javascript:', html)
+        self.assertIn("Bad link", html)  # the headline still shows, just not as a link
+
+    def test_outbound_links_have_safe_rel_and_page_has_no_article_text_field(self):
+        from watcher.page import render
+        html = render([self.rec(1)], self.now)
+        self.assertIn('rel="noopener noreferrer nofollow"', html)
+        self.assertIn("headlines and links only", html)
+
+    def test_empty_page_says_so(self):
+        from watcher.page import render
+        self.assertIn("No matches in this period yet.", render([], self.now))
+
+    def test_dry_run_writes_only_the_preview_page_and_live_run_archives_what_it_sent(self):
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            feed = ('<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><entry><id>a1</id>'
+                    '<title>The White House Accord explained</title><link href="https://e.com/1"/>'
+                    '<published>2026-10-03T08:00:00Z</published></entry></feed>')
+            (d / "s.json").write_text(json.dumps([{"id": "s", "label": "S", "type": "feed", "url": "u"}]), encoding="utf-8")
+            (d / "r.json").write_text(json.dumps({**RULES, "notify_cap": 5}), encoding="utf-8")
+            (d / "l.json").write_text(json.dumps({"labchan_dir": str(d)}), encoding="utf-8")
+            args = ["--sources", str(d / "s.json"), "--rules", str(d / "r.json"), "--local", str(d / "l.json"),
+                    "--state", str(d / "seen.json"), "--captured", str(d / "cap"), "--page", str(d / "out" / "p.html")]
+            with mock.patch.object(runmod, "fetch", lambda url: (feed, url)), \
+                 mock.patch.object(runmod, "send_labchan") as lab, \
+                 mock.patch.object(runmod, "send_email", return_value=False), \
+                 mock.patch.object(runmod, "capture", return_value=(d / "x.md", True)):
+                runmod.main(args)  # dry run
+                self.assertIn("White House Accord explained", (d / "out" / "p.html").read_text(encoding="utf-8"))
+                lab.assert_not_called()
+                self.assertFalse((d / "seen.json").exists())  # nothing remembered
+                runmod.main(args + ["--live"])
+            archive = json.loads((d / "seen.json").read_text(encoding="utf-8"))["archive"]
+            self.assertEqual([r["id"] for r in archive], ["a1"])
+            self.assertNotIn("summary", archive[0])
+
+
 if __name__ == "__main__":
     unittest.main()

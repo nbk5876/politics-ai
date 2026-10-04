@@ -5,3 +5,4 @@ state/
 captured/
 *.log
 config/local.json
+previews/

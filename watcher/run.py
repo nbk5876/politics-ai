@@ -11,11 +11,13 @@ that exists now as seen, then --live for real runs (capture + notify).
 import argparse
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .capture import capture
 from .feeds import parse_feed
 from .fetch import fetch
+from .page import record, render
 from .notify import format_digest, format_match, send_email, send_labchan
 from .rules import matches
 from .state import State
@@ -72,6 +74,8 @@ def main(argv=None):
     ap.add_argument("--local", default=str(ROOT / "config" / "local.json"))
     ap.add_argument("--state", default=str(ROOT / "state" / "seen.json"))
     ap.add_argument("--captured", default=str(ROOT / "captured"))
+    ap.add_argument("--page", default=str(ROOT / "previews" / "ai-safety-topic-links.html"),
+                    help="where to write the shareable page (a local file; uploading is a separate, approved step)")
     ap.add_argument("--baseline", action="store_true")
     ap.add_argument("--live", action="store_true")
     a = ap.parse_args(argv)
@@ -90,7 +94,16 @@ def main(argv=None):
     print(f"\n{len(found)} match(es)" + ("" if a.live else " (dry run: nothing sent, saved or remembered)"))
     for m in found:
         print(f"- [{m['status']}] {m['item']['title']}\n    {m['source']['label']} | {m['item']['link']}\n    {'; '.join(m['reasons'])}")
+    now = datetime.now(timezone.utc)
+
+    def write_page(extra=()):
+        recs = state.data["archive"] + [r for r in extra if all(r["id"] != x["id"] for x in state.data["archive"])]
+        Path(a.page).parent.mkdir(parents=True, exist_ok=True)
+        Path(a.page).write_text(render(recs, now), encoding="utf-8")
+        print(f"page written: {a.page}")
+
     if not a.live:
+        write_page([record(m, now) for m in found])  # preview only: not remembered, not uploaded
         return 0
 
     local = json.loads(Path(a.local).read_text(encoding="utf-8"))
@@ -116,6 +129,7 @@ def main(argv=None):
             text = format_match(m, path.name, ok)
             send_labchan(text, local)
             state.mark(m["item"])  # remembered right after its own send succeeded
+            state.archive(record(m, now))
             email(f"Politics AI: {m['item']['title']}", text)
         rest = found[cap:]
         if rest:
@@ -123,12 +137,14 @@ def main(argv=None):
             send_labchan(digest, local)
             for m in rest[:listed]:  # items the digest did not have room for stay unseen
                 state.mark(m["item"])
+                state.archive(record(m, now))
             email("Politics AI: more matches", digest)
         for sid in failed:
             if state.data["failures"].get(sid, 0) >= 3 and sid not in state.data["alerted_sources"]:
                 send_labchan(f"Politics AI: source '{sid}' has failed {state.data['failures'][sid]} runs in a row.", local)
                 state.data["alerted_sources"].append(sid)
     finally:
+        write_page()
         state.save()  # always: keeps what was sent and the failure counters, even after an error
     return 0
 

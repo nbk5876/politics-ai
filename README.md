@@ -10,6 +10,8 @@ A small AI Lab project that follows one news story. It watches a list of sources
 3. Matches the headline and summary against the story's phrases and words.
 4. In a live run: saves the article text to `captured/`, sends a LabChan message and an email, and remembers the item so it is never reported twice.
 
+5. Builds a shareable page, `ai-safety-topic-links.html`: headlines and links only, last 30 days, newest first. A dry run writes a local preview to `previews/` (not committed); uploading it to the web is a separate step that is not built or approved yet.
+
 The watcher itself makes no model calls, so it costs nothing to run. Summaries by lcRachel are a separate step that is not wired up yet.
 
 ## Try it

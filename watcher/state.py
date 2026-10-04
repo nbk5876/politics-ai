@@ -17,7 +17,7 @@ def item_hash(item):
 class State:
     def __init__(self, path):
         self.path = Path(path)
-        self.data = {"seen": {}, "failures": {}, "alerted_sources": []}
+        self.data = {"seen": {}, "failures": {}, "alerted_sources": [], "archive": []}
         if self.path.exists():
             self.data.update(json.loads(self.path.read_text(encoding="utf-8")))
 
@@ -30,6 +30,11 @@ class State:
 
     def mark(self, item):
         self.data["seen"][item["id"]] = item_hash(item)
+
+    def archive(self, rec):
+        """Remember a notified match (headline, link, source, date: no article text) for the page."""
+        if all(r["id"] != rec["id"] for r in self.data["archive"]):
+            self.data["archive"].append(rec)
 
     def record_failure(self, source_id):
         n = self.data["failures"].get(source_id, 0) + 1
