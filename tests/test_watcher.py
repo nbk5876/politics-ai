@@ -432,6 +432,23 @@ class SecondReviewTests(unittest.TestCase):
         self.assertTrue(matches({"title": "White House weighs AI regulation", "summary": ""}, src, rules)[0])
         self.assertTrue(matches({"title": "NVIDIA OpenShell is out", "summary": ""}, src, rules)[0])  # strong: no context needed
 
+    def test_third_round_loose_ends(self):
+        rules, src = self.real_rules(), {"id": "x", "label": "X"}
+        for title in ("Joint commitment to cut shipping emissions", "J'ai lu: Frontier regulation news"):
+            self.assertFalse(matches({"title": title, "summary": ""}, src, rules)[0], title)
+        self.assertTrue(matches({"title": "Joint Commitment on Frontier Responsibilities", "summary": ""}, src, rules)[0])
+
+    def test_repeated_page_failures_alert_once_after_three_runs(self):
+        with tempfile.TemporaryDirectory() as td:
+            labs = []
+            for _ in range(4):
+                _, lab = self._live(td, self.FEED, [mock.patch.object(runmod, "render", side_effect=RuntimeError("x"))])
+                labs.append(lab.call_args_list)
+            alert_runs = [i for i, calls in enumerate(labs) if any("links page has failed" in str(c) for c in calls)]
+            self.assertEqual(alert_runs, [2])  # third failure in a row alerts, and only once
+            failures = json.loads((Path(td) / "seen.json").read_text(encoding="utf-8"))["failures"]
+            self.assertEqual(failures.get("page"), 4)
+
     def test_fetch_refuses_non_http_urls(self):
         from watcher.fetch import fetch
         for url in ("file:///etc/passwd", "ftp://example.com/x", "javascript:alert(1)"):

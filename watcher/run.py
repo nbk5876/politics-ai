@@ -144,12 +144,24 @@ def main(argv=None):
                 send_labchan(f"Politics AI: source '{sid}' has failed {state.data['failures'][sid]} runs in a row.", local)
                 state.data["alerted_sources"].append(sid)
     finally:
-        state.prune_archive(now)
+        try:
+            state.prune_archive(now)
+        except Exception as e:
+            print(f"prune failed: {type(e).__name__}: {e}")
         state.save()  # first: what was sent must be remembered even if the page cannot be built
         try:
             write_page()
+            state.record_ok("page")
         except Exception as e:
-            print(f"page failed: {type(e).__name__}: {e}")  # always: keeps what was sent and the failure counters, even after an error
+            n = state.record_failure("page")
+            print(f"page failed ({n} in a row): {type(e).__name__}: {e}")
+            if n >= 3 and "page" not in state.data["alerted_sources"]:
+                try:
+                    send_labchan(f"Politics AI: the links page has failed to build {n} runs in a row.", local)
+                    state.data["alerted_sources"].append("page")
+                except Exception as e2:
+                    print(f"page alert failed: {type(e2).__name__}: {e2}")
+        state.save()
     return 0
 
 

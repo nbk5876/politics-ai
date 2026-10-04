@@ -19,9 +19,12 @@ def parse_date(s):
 
 def term_pattern(term):
     """Whole-word, case-insensitive pattern. A trailing * allows any word ending: 'collaborat*'."""
+    flags = re.IGNORECASE
+    if term.startswith("="):  # a leading = makes the term case-sensitive: "=AI" is not the word "ai"
+        term, flags = term[1:], 0
     if term.endswith("*"):
-        return re.compile(r"\b" + re.escape(term[:-1]) + r"\w*", re.IGNORECASE)
-    return re.compile(r"\b" + re.escape(term) + r"\b", re.IGNORECASE)
+        return re.compile(r"\b" + re.escape(term[:-1]) + r"\w*", flags)
+    return re.compile(r"\b" + re.escape(term) + r"\b", flags)
 
 
 def _hits(terms, text):

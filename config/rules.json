@@ -3,8 +3,7 @@
   "strong": [
     "White House Accord",
     "Accord on Super",
-    "Joint Commitment",
-    "Frontier Responsibilities",
+    "Joint Commitment on Frontier Responsibilities",
     "NVIDIA OpenShell",
     "NVIDIA Sentry",
     "Open Agent Safety Platform"
@@ -22,7 +21,7 @@
   "min_weak": 2,
   "notify_cap": 10,
   "require_context": [
-    "AI",
+    "=AI",
     "artificial intelligence",
     "superintelligence",
     "super intelligence"
