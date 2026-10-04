@@ -27,6 +27,22 @@
     "hash_title_only": true
   },
   {
+    "id": "nvidia-newsroom",
+    "label": "NVIDIA Newsroom (press releases)",
+    "type": "feed",
+    "url": "https://nvidianews.nvidia.com/releases.xml",
+    "require_keyword_in_title": true,
+    "enabled": true
+  },
+  {
+    "id": "nvidia-dev-blog",
+    "label": "NVIDIA Technical Blog",
+    "type": "feed",
+    "url": "https://developer.nvidia.com/blog/feed/",
+    "require_keyword_in_title": true,
+    "enabled": true
+  },
+  {
     "id": "google-news-accord",
     "label": "Google News: White House Accord on AI safety",
     "type": "feed",
