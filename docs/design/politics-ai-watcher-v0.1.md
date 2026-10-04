@@ -6,7 +6,7 @@
 
 <img src="images/welcome-splash.png" alt="The team: lcRachel (ChatGPT Cloud), Jeff and Debbie (AI Lab)" width="50%">
 
-*The AI Lab team. Jeff designs and builds, Debbie reviews, lcRachel summarizes.*
+*The AI Lab team. Jeff designs and builds, lcRachel fetches and summarizes, Debbie reviews.*
 
 ## 1. Purpose
 
