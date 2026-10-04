@@ -15,6 +15,10 @@ Notes
 $ErrorActionPreference = "Stop"
 $repo   = Split-Path -Parent $PSScriptRoot
 $python = (Get-Command python).Source
+# The Microsoft Store "python" shortcut fails under Task Scheduler: refuse it and require a real install.
+if ($python -like "*\WindowsApps\*" -or -not (& $python --version 2>$null)) {
+    throw "python at '$python' is the Microsoft Store stub or does not run; install Python or put a real python.exe first on PATH."
+}
 $log    = Join-Path $repo "logs\watcher.log"
 New-Item -ItemType Directory -Force -Path (Join-Path $repo "logs") | Out-Null
 

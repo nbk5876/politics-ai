@@ -53,7 +53,8 @@ def send_labchan(message, local):
            "--from", local.get("labchan_from", "jeff"),
            "--to", local.get("labchan_to", "tb"),
            "--yes", "--message", message]
-    p = subprocess.run(cmd, cwd=local["labchan_dir"], capture_output=True, text=True, timeout=60)
+    p = subprocess.run(cmd, cwd=local["labchan_dir"], capture_output=True, text=True, timeout=60,
+                       env={k: v for k, v in os.environ.items() if k != "DH_PASS"})
     if p.returncode != 0:
         raise RuntimeError((p.stdout + p.stderr).strip()[-300:])
     return p.stdout.strip()

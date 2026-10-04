@@ -46,7 +46,9 @@ class UploadTests(unittest.TestCase):
         upload(self.f, CFG, secret=SECRET, runner=r)
         cmd = r.calls[0][0]
         self.assertEqual(cmd[cmd.index("--hostpubsha256") + 1], "PIN=")
-        self.assertEqual(cmd[-1], "sftp://example.org/home/me/site/page.html")
+        self.assertEqual(cmd[-1], "sftp://example.org/home/me/site/page.html.part")  # temp name first
+        qs = [cmd[i + 1] for i, c in enumerate(cmd) if c == "-Q"]
+        self.assertEqual(qs, ["-*RM /home/me/site/page.html", "-RENAME /home/me/site/page.html.part /home/me/site/page.html"])
 
     def test_no_pinned_key_means_no_upload(self):
         r = Recorder()
@@ -75,6 +77,26 @@ class UploadTests(unittest.TestCase):
             verify(self.f, CFG["public_url"], fetcher=lambda u: (200, b"old page"))
         with self.assertRaises(PublishError):
             verify(self.f, CFG["public_url"], fetcher=lambda u: (404, data))
+
+    def test_child_environment_has_no_password_variable(self):
+        r = Recorder()
+        with mock.patch.dict("os.environ", {"DH_PASS": "secret-value", "KEEP": "1"}):
+            upload(self.f, CFG, secret=SECRET, runner=r)
+        env = r.calls[0][1]["env"]
+        self.assertNotIn("DH_PASS", env)
+        self.assertEqual(env.get("KEEP"), "1")
+
+    def test_mismatch_triggers_one_re_upload_then_succeeds(self):
+        r = Recorder()
+        answers = iter([(200, b"half written"), (200, self.f.read_bytes())])
+        publish_page(self.f, CFG, secret=SECRET, runner=r, fetcher=lambda u: next(answers))
+        self.assertEqual(len(r.calls), 2)
+
+    def test_mismatch_twice_raises(self):
+        r = Recorder()
+        with self.assertRaises(PublishError):
+            publish_page(self.f, CFG, secret=SECRET, runner=r, fetcher=lambda u: (200, b"still wrong"))
+        self.assertEqual(len(r.calls), 2)
 
     def test_publish_page_uploads_then_verifies(self):
         r = Recorder()
