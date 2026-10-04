@@ -8,21 +8,6 @@
 
 *The AI Lab team. Jeff designs and builds, Debbie reviews, lcRachel summarizes.*
 
-## Status at a glance
-
-| Piece | State |
-|---|---|
-| Feed watcher (5 sources) | Live |
-| Matching rules | Live |
-| LabChan notifications | Live |
-| Email notifications | Built, not configured |
-| Links page and upload | Live: https://www.core3.com/politics-ai/ai-safety-topic-links.html |
-| Twice-a-day schedule | Live (Windows Scheduled Task, registered 2026-10-03) |
-| lcRachel summaries | Tried by hand twice; automatic summaries not built |
-| Page-watching (Anthropic, Amodei) | Not built |
-| Code review | Debbie reviewed four times; all findings closed |
-| Tests | 56 unit tests, no network needed |
-
 ## 1. Purpose
 
 **In plain English:** Politics AI is a small AI Lab project that follows one news story so nobody has to keep checking for updates. It watches a list of websites, notices when something new appears about the story, saves a copy, sends a short note with the link, and keeps a public page of the links.
@@ -40,6 +25,21 @@
 **How we keep it honest:** every claim in a summary must point to the page it came from. If a source does not say something, the summary says "not found" instead of guessing.
 
 **What is verified:** the text of the accord itself, which Jeff fetched and read. Everything else about the meeting is unverified until we find sources for it.
+
+## Status at a glance
+
+| Piece | State |
+|---|---|
+| Feed watcher (5 sources) | Live |
+| Matching rules | Live |
+| LabChan notifications | Live |
+| Email notifications | Built, not configured |
+| Links page and upload | Live: https://www.core3.com/politics-ai/ai-safety-topic-links.html |
+| Twice-a-day schedule | Live (Windows Scheduled Task, registered 2026-10-03) |
+| lcRachel summaries | Tried by hand twice; automatic summaries not built |
+| Page-watching (Anthropic, Amodei) | Not built |
+| Code review | Debbie reviewed four times; all findings closed |
+| Tests | 56 unit tests, no network needed |
 
 ## 1a. Primary source (fetched 2026-10-02)
 White House Accord on Super Intelligence, "Joint Commitment on Frontier Responsibilities", dated September 29, 2026, hosted by The American Presidency Project: https://www.presidency.ucsb.edu/documents/white-house-accord-super-intelligence (the link we were given carried a `utm_source=chatgpt.com` tracking suffix, dropped here). Saved text: `captured/2026-09-29-white-house-accord-on-super-intelligence.txt` (kept out of git).
