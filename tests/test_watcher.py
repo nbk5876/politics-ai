@@ -31,6 +31,22 @@ RSS = """<?xml version="1.0"?>
 RULES = {"strong": ["White House Accord"], "weak": ["accord", "AI safety", "collaborat"], "min_weak": 2, "notify_cap": 2}
 
 
+# Tests that call runmod.main without --page/--state must never touch the real previews/ or state/ folders
+# (an earlier run of the tests overwrote the preview page, and that file was then published by mistake).
+_root_patch = None
+
+
+def setUpModule():
+    global _root_patch
+    _root_patch = mock.patch.object(runmod, "ROOT", Path(tempfile.mkdtemp()))
+    _root_patch.start()
+
+
+def tearDownModule():
+    _root_patch.stop()
+
+
+
 class FeedTests(unittest.TestCase):
     def test_parse_atom(self):
         items = parse_feed(ATOM)
