@@ -108,7 +108,7 @@ Code is in `watcher/`; settings are in `config/`.
 3. **Notify:** a LabChan message to the owner, and an email to the owner's address (kept in settings that are never committed to this public repo; not configured yet).
 4. **How often:** twice a day, 8 AM and 8 PM.
 5. **Where articles are saved:** the repo's `captured/` folder, kept out of git.
-6. **Start date:** 2026-09-24, one day before the accord, to include NVIDIA's launch announcement.
+6. **Start date:** 2026-09-28 at first (to include NVIDIA's launch announcement), moved back to 2026-09-24 so a Malwarebytes story about an AI agent incident, published that day, is included. A dry run showed no other item enters at that date.
 7. **Phrases added by the owner:** NVIDIA OpenShell, NVIDIA Sentry, Open Agent Safety Platform.
 8. **Links page:** published at `core3.com/politics-ai/`, last 30 days, linked from the AI Lab menu.
 9. **Summaries:** lcRachel summarizes matches, by LabChan only (no email for summaries). Not wired in yet.
