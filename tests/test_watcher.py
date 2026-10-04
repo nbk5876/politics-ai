@@ -549,7 +549,7 @@ class SecondReviewTests(unittest.TestCase):
 
 
 class AnalyticsTests(unittest.TestCase):
-    MID = "G-291QNWCB1H"
+    MID = "G-TESTID1234"
 
     def test_id_is_validated(self):
         from watcher.page import valid_analytics_id
