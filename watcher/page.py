@@ -42,6 +42,18 @@ def friendly_date(d):
     return f"{d.strftime('%b')} {d.day} {d.year}" if d else ""
 
 
+def friendly_stamp(dt, tz=None):
+    """'Oct 3 2026, 11:12 PM PDT'. Windows gives the zone as 'Pacific Daylight Time', so a long name
+    is shortened to its initials (PDT)."""
+    local = dt.astimezone(tz) if tz else dt.astimezone()
+    name = local.tzname() or ""
+    if " " in name:
+        name = "".join(w[0] for w in name.split()).upper()
+    hour = local.hour % 12 or 12
+    return (f"{friendly_date(local)}, {hour}:{local.minute:02d} {'AM' if local.hour < 12 else 'PM'}"
+            + (f" {name}" if name else ""))
+
+
 def record(m, now):
     """The archive record for one match (no article text)."""
     it = m["item"]
@@ -148,7 +160,7 @@ def render(records, now=None, days=30, analytics_id=None, preview=None):
     table = ('<div class="tablewrap"><table><thead><tr><th>Date</th><th>Headline</th><th>Source</th>'
              '</tr></thead><tbody>\n' + "\n".join(body) + "\n</tbody></table></div>"
              if body else "<p>No matches in this period yet.</p>")
-    stamp = now.astimezone().strftime("%Y-%m-%d %H:%M %Z")
+    stamp = friendly_stamp(now)
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>

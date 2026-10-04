@@ -423,6 +423,19 @@ class PageTests(unittest.TestCase):
         self.assertIn('<td class="date">Oct 2 2026</td>', html)
         self.assertNotIn("2026-10-02", html.split("<tbody>")[1])
 
+    def test_updated_line_is_friendly(self):
+        from datetime import datetime, timedelta, timezone
+        from watcher.page import friendly_stamp, render
+        pdt = timezone(timedelta(hours=-7), "PDT")
+        self.assertEqual(friendly_stamp(datetime(2026, 10, 4, 6, 12, tzinfo=timezone.utc), pdt), "Oct 3 2026, 11:12 PM PDT")
+        self.assertEqual(friendly_stamp(datetime(2026, 10, 3, 19, 5, tzinfo=timezone.utc), pdt), "Oct 3 2026, 12:05 PM PDT")
+        self.assertEqual(friendly_stamp(datetime(2026, 10, 3, 7, 0, tzinfo=timezone.utc), pdt), "Oct 3 2026, 12:00 AM PDT")
+        self.assertEqual(friendly_stamp(datetime(2026, 10, 3, 15, 9, tzinfo=timezone.utc), pdt), "Oct 3 2026, 8:09 AM PDT")
+        long_name = timezone(timedelta(hours=-7), "Pacific Daylight Time")
+        self.assertTrue(friendly_stamp(datetime(2026, 10, 4, 6, 12, tzinfo=timezone.utc), long_name).endswith("PM PDT"))
+        html = render([], self.now)
+        self.assertRegex(html, r"Updated [A-Z][a-z]{2} \d{1,2} 2026, \d{1,2}:\d{2} (AM|PM)")
+
     def test_empty_page_says_so(self):
         from watcher.page import render
         self.assertIn("No matches in this period yet.", render([], self.now))
