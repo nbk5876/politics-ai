@@ -32,12 +32,29 @@ def _hits(terms, text):
     return [t for t in terms if term_pattern(t).search(text)]
 
 
+def _combo_hits(combos, text):
+    """Each combo is a list of groups; a group is words separated by | (any one will do).
+    A combo matches when every group has a hit, e.g. ["OpenAI|Anthropic", "agent*|sandbox"]."""
+    out = []
+    for combo in combos:
+        found = []
+        for group in combo:
+            hit = next((t for t in group.split("|") if term_pattern(t).search(text)), None)
+            if hit is None:
+                break
+            found.append(hit)
+        else:
+            out.append(" + ".join(found))
+    return out
+
+
 def matches(item, source, rules, text=""):
     """Return (matched, reasons). Loose on purpose; tighten config/rules.json later.
 
     - `since` (YYYY-MM-DD): items published before this date never match. Items whose date
       cannot be read are kept, so nothing is silently dropped.
-    - `strong` phrases: any one is enough.
+    - `strong` phrases: any one is enough. `strong_combos` are pairs (or more) of word groups that must
+      all appear, such as a lab name together with 'agent' or 'sandbox'.
     - `weak` words: at least `min_weak` different ones are needed, and, when `require_context` is set,
       at least one context word too (so a car model or an airline with the word 'regulation' is not a match).
     - Terms match whole words only ("accord" does not match "according"); end a term with *
@@ -52,7 +69,7 @@ def matches(item, source, rules, text=""):
             return False, []
     head = " ".join([item.get("title", ""), item.get("summary", "")])
     hay = head if source.get("require_keyword_in_title") or not text else head + " " + text
-    strong = _hits(rules.get("strong", []), hay)
+    strong = _hits(rules.get("strong", []), hay) + _combo_hits(rules.get("strong_combos", []), hay)
     weak = _hits(rules.get("weak", []), hay)
     context = rules.get("require_context")
     has_context = (not context) or bool(_hits(context, hay))  # e.g. the word AI must appear

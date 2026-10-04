@@ -43,6 +43,14 @@
     "enabled": true
   },
   {
+    "id": "malwarebytes-blog",
+    "label": "Malwarebytes blog",
+    "type": "feed",
+    "url": "https://www.malwarebytes.com/blog/feed",
+    "require_keyword_in_title": true,
+    "enabled": true
+  },
+  {
     "id": "google-news-accord",
     "label": "Google News: White House Accord on AI safety",
     "type": "feed",

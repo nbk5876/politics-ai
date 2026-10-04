@@ -26,5 +26,11 @@
     "artificial intelligence",
     "superintelligence",
     "super intelligence"
+  ],
+  "strong_combos": [
+    [
+      "OpenAI|Anthropic",
+      "agent*|sandbox"
+    ]
   ]
 }

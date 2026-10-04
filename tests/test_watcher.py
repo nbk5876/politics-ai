@@ -548,6 +548,29 @@ class SecondReviewTests(unittest.TestCase):
             self.assertNotIn("a1", data["seen"])  # not marked, so it is reported again, not lost
 
 
+class ComboRuleTests(unittest.TestCase):
+    def test_lab_name_with_agent_or_sandbox_matches_only_together(self):
+        rules = SecondReviewTests.real_rules()
+        src = {"id": "x", "label": "X", "require_keyword_in_title": True}
+        yes = ("OpenAI pauses work on top AI models after agent slips past internet controls",
+               "OpenAI agent breached Australian government site", "Anthropic model escapes its sandbox")
+        no = ("The Lenfest Institute grows program with expanded OpenAI support",   # lab name alone
+              "FBI agents' blood tests and doctors' notes surface after breach",     # agent without a lab name
+              "OpenAI announces new office",                                         # lab name alone
+              "Sandbox game of the year")                                            # sandbox without a lab name
+        for title in yes:
+            ok, why = matches({"title": title, "summary": ""}, src, rules)
+            self.assertTrue(ok, title)
+        self.assertIn("+", matches({"title": yes[1], "summary": ""}, src, rules)[1][0])
+        for title in no:
+            self.assertFalse(matches({"title": title, "summary": ""}, src, rules)[0], title)
+
+    def test_combo_needs_whole_words(self):
+        from watcher.rules import _combo_hits
+        self.assertEqual(_combo_hits([["OpenAI|Anthropic", "agent*"]], "OpenAI reagent"), [])
+        self.assertEqual(_combo_hits([["OpenAI|Anthropic", "agent*"]], "OpenAI agents everywhere"), ["OpenAI + agent*"])
+
+
 class AnalyticsTests(unittest.TestCase):
     MID = "G-TESTID1234"
 
