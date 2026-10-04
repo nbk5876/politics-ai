@@ -26,7 +26,6 @@ CSS = """
   th, td { border: 1px solid #ccc; padding: .4rem .6rem; text-align: left; vertical-align: top; font-size: .9rem; }
   th { background: #e9e9e9; }
   td.date { white-space: nowrap; }
-  td.why { color: #555; font-size: .82rem; }
   footer { margin-top: 1.5rem; color: #555; font-size: .85rem; }
   a { color: #0b57d0; }
 """
@@ -140,9 +139,9 @@ def render(records, now=None, days=30, analytics_id=None, preview=None):
         head = (f'<a href="{escape(link, quote=True)}" target="_blank" rel="noopener noreferrer nofollow">{title}</a>'
                 if link else title)
         body.append(f'<tr><td class="date">{d.strftime("%Y-%m-%d") if d else ""}</td><td>{head}</td>'
-                    f'<td>{escape(r["source"])}</td><td class="why">{escape(r["reasons"])}</td></tr>')
+                    f'<td>{escape(r["source"])}</td></tr>')
     table = ('<div class="tablewrap"><table><thead><tr><th>Date</th><th>Headline</th><th>Source</th>'
-             '<th>Matched on</th></tr></thead><tbody>\n' + "\n".join(body) + "\n</tbody></table></div>"
+             '</tr></thead><tbody>\n' + "\n".join(body) + "\n</tbody></table></div>"
              if body else "<p>No matches in this period yet.</p>")
     stamp = now.astimezone().strftime("%Y-%m-%d %H:%M %Z")
     return f"""<!DOCTYPE html>

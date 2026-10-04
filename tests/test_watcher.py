@@ -405,6 +405,14 @@ class PageTests(unittest.TestCase):
         self.assertIn('rel="noopener noreferrer nofollow"', html)
         self.assertIn("headlines and links only", html)
 
+    def test_public_page_does_not_show_why_an_item_matched(self):
+        from watcher.page import render
+        html = render([self.rec(1, reasons="phrases: White House Accord; words: AI safety")], self.now)
+        self.assertNotIn("Matched on", html)
+        self.assertNotIn("White House Accord; words", html)
+        self.assertEqual(html.count("<th>"), 3)  # Date, Headline, Source
+        self.assertEqual(html.count("<td"), 3)
+
     def test_empty_page_says_so(self):
         from watcher.page import render
         self.assertIn("No matches in this period yet.", render([], self.now))
