@@ -67,7 +67,7 @@ Code is in `watcher/`; settings are in `config/`.
 
 1. **Sources** (`config/sources.json`). Enabled: Sam Altman's blog (Atom feed), OpenAI news (RSS), Bing News search for the story (RSS), NVIDIA Newsroom (RSS), NVIDIA Technical Blog (Atom). Switched off: Google News search (its links are redirects a script cannot open; Bing's links contain the real publisher URL, which the watcher unwraps), and two page-only sources with no feed, the Anthropic news page and Dario Amodei's essays (phase 2). Not usable: X/Twitter posts, paywalled pages, outlets that block bots (Reuters, UPI).
 2. **Matching** (`config/rules.json`), loose on purpose and tightened over time:
-   - Items published before 2026-09-28 never match; items with an unreadable date are kept.
+   - Items published before 2026-09-24 never match; items with an unreadable date are kept.
    - **Strong phrases** match alone: "White House Accord", "Accord on Super", "Joint Commitment on Frontier Responsibilities", "NVIDIA OpenShell", "NVIDIA Sentry", "Open Agent Safety Platform".
    - **Weak words** (AI safety, regulation, work together, collaborat*, White House, accord, frontier, superintelligence) need at least two different ones **and** an AI context word (AI, A.I., artificial intelligence, superintelligence). This keeps out "Honda Accord", "Frontier Airlines" and "according".
    - Terms match whole words. A leading `=` makes a term case-sensitive; a trailing `*` allows word endings.
@@ -108,7 +108,7 @@ Code is in `watcher/`; settings are in `config/`.
 3. **Notify:** a LabChan message to the owner, and an email to the owner's address (kept in settings that are never committed to this public repo; not configured yet).
 4. **How often:** twice a day, 8 AM and 8 PM.
 5. **Where articles are saved:** the repo's `captured/` folder, kept out of git.
-6. **Start date:** 2026-09-28, one day before the accord, to include NVIDIA's launch announcement.
+6. **Start date:** 2026-09-24, one day before the accord, to include NVIDIA's launch announcement.
 7. **Phrases added by the owner:** NVIDIA OpenShell, NVIDIA Sentry, Open Agent Safety Platform.
 8. **Links page:** published at `core3.com/politics-ai/`, last 30 days, linked from the AI Lab menu.
 9. **Summaries:** lcRachel summarizes matches, by LabChan only (no email for summaries). Not wired in yet.

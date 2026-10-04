@@ -28,7 +28,7 @@
   },
   {
     "id": "nvidia-newsroom",
-    "label": "NVIDIA Newsroom (press releases)",
+    "label": "NVIDIA Newsroom",
     "type": "feed",
     "url": "https://nvidianews.nvidia.com/releases.xml",
     "require_keyword_in_title": true,
