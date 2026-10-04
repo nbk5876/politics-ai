@@ -10,7 +10,7 @@
 
 ## 1. Purpose
 
-**In plain English:** Politics AI is a small AI Lab project that follows one news story so nobody has to keep checking for updates. It watches a list of websites, notices when something new appears about the story, saves a copy, sends a short note with the link, and keeps a public page of the links.
+Politics AI is a small AI Lab project that follows one news story so nobody has to keep checking for updates. It watches a list of websites, notices when something new appears about the story, saves a copy, sends a short note with the link, and keeps a public page of the links.
 
 **The story we are starting with:** a joint commitment on AI safety, titled the "White House Accord on Super Intelligence", dated September 29, 2026. Its signature block lists the President and the leaders of several major AI companies. The full text is summarized in section 1a. The watcher also follows NVIDIA's "Open Agent Safety Platform" announcement (NVIDIA OpenShell and NVIDIA Sentry), published a day earlier.
 
