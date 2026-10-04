@@ -18,7 +18,7 @@ def format_match(m, saved_name=None, extraction_ok=True):
         f"Politics AI: new match ({m['status']})",
         "",
         f"Title: {it['title'][:200]}",
-        f"Source: {src['label']}",
+        f"Source: {it.get('publisher') or src['label']}",
         f"Link: {it['link']}",
         f"Published: {it.get('published', '') or 'unknown'}",
         "",

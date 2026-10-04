@@ -47,6 +47,45 @@ def tearDownModule():
 
 
 
+class PublisherTests(unittest.TestCase):
+    BING = ("<rss xmlns:News='https://www.bing.com/news/search'><channel><item><title>T</title>"
+            "<link>http://www.bing.com/news/apiclick.aspx?tid=1&amp;url=https%3a%2f%2fexample.com%2fa</link>"
+            "<News:Source>Al Jazeera on MSN</News:Source></item></channel></rss>")
+
+    def test_bing_publisher_is_read_from_the_item(self):
+        (it,) = parse_feed(self.BING)
+        self.assertEqual(it["publisher"], "Al Jazeera on MSN")
+
+    def test_feeds_without_a_source_tag_have_an_empty_publisher(self):
+        (it,) = parse_feed(RSS)
+        self.assertEqual(it["publisher"], "")
+
+    def test_page_and_messages_show_the_publisher_when_there_is_one(self):
+        from watcher.page import record, render
+        from watcher.notify import format_match
+        now = __import__("datetime").datetime(2026, 10, 3, tzinfo=__import__("datetime").timezone.utc)
+        src = {"id": "bing", "label": "Bing News: White House Accord on AI safety"}
+        item = {"id": "1", "title": "T", "link": "https://example.com/a", "published": "2026-10-02T00:00:00Z",
+                "summary": "", "publisher": "Al Jazeera on MSN"}
+        m = {"source": src, "item": item, "status": "new", "reasons": ["x"]}
+        rec = record(m, now)
+        self.assertEqual(rec["source"], "Al Jazeera on MSN")
+        self.assertIn("<td>Al Jazeera on MSN</td>", render([rec], now))
+        self.assertIn("Source: Al Jazeera on MSN", format_match(m))
+        m["item"] = {**item, "publisher": ""}
+        self.assertEqual(record(m, now)["source"], src["label"])  # falls back to the feed's own name
+        self.assertIn("Source: Bing News", format_match(m))
+
+    def test_hostile_publisher_text_is_escaped_on_the_page(self):
+        from watcher.page import render
+        now = __import__("datetime").datetime(2026, 10, 3, tzinfo=__import__("datetime").timezone.utc)
+        rec = {"id": "1", "title": "T", "link": "https://example.com/a", "source": "<script>alert(1)</script>",
+               "published": "2026-10-02T00:00:00Z", "reasons": "", "first_seen": "2026-10-03T00:00:00+00:00"}
+        html = render([rec], now)
+        self.assertNotIn("<script>alert(1)</script>", html)
+        self.assertIn("&lt;script&gt;", html)
+
+
 class FeedTests(unittest.TestCase):
     def test_parse_atom(self):
         items = parse_feed(ATOM)

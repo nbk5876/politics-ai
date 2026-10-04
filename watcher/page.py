@@ -57,7 +57,7 @@ def friendly_stamp(dt, tz=None):
 def record(m, now):
     """The archive record for one match (no article text)."""
     it = m["item"]
-    return {"id": it["id"], "title": it["title"][:300], "link": it["link"], "source": m["source"]["label"],
+    return {"id": it["id"], "title": it["title"][:300], "link": it["link"], "source": it.get("publisher") or m["source"]["label"],
             "published": it.get("published", ""), "reasons": "; ".join(m["reasons"]),
             "first_seen": now.isoformat(timespec="seconds")}
 

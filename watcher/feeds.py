@@ -32,13 +32,13 @@ def resolve_link(link):
 
 
 def parse_feed(xml_text):
-    """Return a list of {id, title, link, published, summary, author}."""
+    """Return a list of {id, title, link, published, summary, author, publisher}."""
     root = ET.fromstring(xml_text.encode("utf-8") if isinstance(xml_text, str) else xml_text)
     items = []
     for el in root.iter():
         if _local(el.tag) not in ("item", "entry"):
             continue
-        d = {"id": "", "title": "", "link": "", "published": "", "summary": "", "author": ""}
+        d = {"id": "", "title": "", "link": "", "published": "", "summary": "", "author": "", "publisher": ""}
         for child in el:
             n = _local(child.tag)
             if n == "title":
@@ -56,6 +56,8 @@ def parse_feed(xml_text):
                 d["published"] = d["published"] or _text(child)
             elif n in ("description", "summary", "content", "encoded"):
                 d["summary"] = d["summary"] or _strip_tags("".join(child.itertext()))
+            elif n.lower() == "source":  # Bing's <News:Source> or Google's <source>: the outlet that published it
+                d["publisher"] = d["publisher"] or _strip_tags("".join(child.itertext()))[:80]
             elif n in ("creator", "author"):
                 d["author"] = d["author"] or _strip_tags("".join(child.itertext()))
         real = resolve_link(d["link"])
