@@ -438,6 +438,13 @@ class SecondReviewTests(unittest.TestCase):
             self.assertFalse(matches({"title": title, "summary": ""}, src, rules)[0], title)
         self.assertTrue(matches({"title": "Joint Commitment on Frontier Responsibilities", "summary": ""}, src, rules)[0])
 
+    def test_a_dot_i_dot_counts_as_ai_context(self):
+        rules, src = self.real_rules(), {"id": "x", "label": "X"}
+        for title in ("White House weighs A.I. regulation", "A.I. regulation: White House weighs in"):
+            self.assertTrue(matches({"title": title, "summary": ""}, src, rules)[0], title)
+        for title in ("White House weighs DA.I. regulation", "Honda Accord tied to new regulation"):
+            self.assertFalse(matches({"title": title, "summary": ""}, src, rules)[0], title)
+
     def test_repeated_page_failures_alert_once_after_three_runs(self):
         with tempfile.TemporaryDirectory() as td:
             labs = []

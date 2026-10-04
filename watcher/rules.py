@@ -22,9 +22,10 @@ def term_pattern(term):
     flags = re.IGNORECASE
     if term.startswith("="):  # a leading = makes the term case-sensitive: "=AI" is not the word "ai"
         term, flags = term[1:], 0
+    # (?<!\w) and (?!\w) work like \b but also when a term ends in punctuation, as in "A.I."
     if term.endswith("*"):
-        return re.compile(r"\b" + re.escape(term[:-1]) + r"\w*", flags)
-    return re.compile(r"\b" + re.escape(term) + r"\b", flags)
+        return re.compile(r"(?<!\w)" + re.escape(term[:-1]) + r"\w*", flags)
+    return re.compile(r"(?<!\w)" + re.escape(term) + r"(?!\w)", flags)
 
 
 def _hits(terms, text):
