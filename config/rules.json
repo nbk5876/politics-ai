@@ -1,12 +1,13 @@
 {
-  "since": "2026-09-29",
+  "since": "2026-09-28",
   "strong": [
     "White House Accord",
     "Accord on Super",
     "Joint Commitment",
     "Frontier Responsibilities",
     "NVIDIA OpenShell",
-    "NVIDIA Sentry"
+    "NVIDIA Sentry",
+    "Open Agent Safety Platform"
   ],
   "weak": [
     "AI safety",

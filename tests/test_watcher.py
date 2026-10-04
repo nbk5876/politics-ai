@@ -84,7 +84,8 @@ class RuleTests(unittest.TestCase):
         from pathlib import Path as _P
         rules = _json.loads((_P(__file__).resolve().parent.parent / "config" / "rules.json").read_text(encoding="utf-8"))
         src = {"id": "x", "label": "X"}
-        for title in ("NVIDIA OpenShell launches today", "Nvidia Sentry explained", "Why NVIDIA SENTRY matters"):
+        for title in ("NVIDIA OpenShell launches today", "Nvidia Sentry explained", "Why NVIDIA SENTRY matters",
+                      "NVIDIA Launches Open Agent Safety Platform"):
             self.assertTrue(matches({"title": title, "summary": ""}, src, rules)[0], title)
         self.assertFalse(matches({"title": "Open shell scripting tips", "summary": ""}, src, rules)[0])
 
