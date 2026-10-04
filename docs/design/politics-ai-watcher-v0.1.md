@@ -1,6 +1,6 @@
 # Politics AI watcher: design
 
-**Date:** 2026-10-02 (updated 2026-10-03)  
+**Date:** 2026-10-02 (updated 2026-10-04)  
 **Status:** Live. Running twice a day, 8 AM and 8 PM, since 2026-10-03.  
 **Written by:** Jeff, reviewed by Debbie
 
@@ -11,6 +11,8 @@
 ## 1. Purpose
 
 Politics AI is a small AI Lab project that follows one news story so nobody has to keep checking for updates. It watches a list of websites, notices when something new appears about the story, saves a copy, sends a short note with the link, and keeps a public page of the links.
+
+**Why this project exists (the AI Lab's goal):** the AI Lab is a learning lab. Its aim is to build up its AI models' capabilities step by step, as far as we can, with the long-term hope of getting them close to what the most capable AI assistants can do. That is a high bar and we do not claim to be near it. Much of what makes an assistant capable is not the model alone but the tools around it: reading web pages, remembering earlier work, running small checks, and logging what it did. The lab adds these one at a time, each with a person's approval and a way to measure whether it helped. Politics AI is a real, small task that lets us try them on something useful: watching sources, reading what they say, and summarizing with citations.
 
 **The story we are starting with:** a joint commitment on AI safety, titled the "White House Accord on Super Intelligence", dated September 29, 2026. Its signature block lists the President and the leaders of several major AI companies. The full text is summarized in section 1a. The watcher also follows NVIDIA's "Open Agent Safety Platform" announcement (NVIDIA OpenShell and NVIDIA Sentry), published a day earlier.
 
