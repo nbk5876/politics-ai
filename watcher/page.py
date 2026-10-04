@@ -100,10 +100,31 @@ def analytics_parts(mid):
     return markup, csp
 
 
-def render(records, now=None, days=30, analytics_id=None):
+def preview_tags(preview):
+    """Link-preview meta tags (Open Graph and Twitter card) from a dict with page_url, image_url,
+    description and optional image_alt. Returns '' unless every value is usable: https URLs, short text."""
+    if not isinstance(preview, dict):
+        return ""
+    page_url, image_url = safe_url(preview.get("page_url")), safe_url(preview.get("image_url"))
+    desc = preview.get("description")
+    if not (page_url.startswith("https://") and image_url.startswith("https://") and isinstance(desc, str) and desc.strip()):
+        return ""
+    desc = " ".join(desc.split())[:200]
+    alt = " ".join(str(preview.get("image_alt") or TITLE).split())[:120]
+    q = lambda v: escape(v, quote=True)
+    tags = [("name", "description", desc), ("property", "og:type", "website"), ("property", "og:site_name", "Politics AI"),
+            ("property", "og:title", TITLE), ("property", "og:description", desc), ("property", "og:url", page_url),
+            ("property", "og:image", image_url), ("property", "og:image:alt", alt),
+            ("name", "twitter:card", "summary_large_image"), ("name", "twitter:title", TITLE),
+            ("name", "twitter:description", desc), ("name", "twitter:image", image_url)]
+    return "\n".join(f'<meta {k}="{q(n)}" content="{q(v)}">' for k, n, v in tags)
+
+
+def render(records, now=None, days=30, analytics_id=None, preview=None):
     now = now or datetime.now(timezone.utc)
     mid = valid_analytics_id(analytics_id)
     tag, csp = analytics_parts(mid)
+    og = preview_tags(preview)
     rows = select(records, now, days)
     body = []
     for r in rows:
@@ -125,6 +146,7 @@ def render(records, now=None, days=30, analytics_id=None):
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta http-equiv="Content-Security-Policy" content="{csp}">
 <title>{TITLE}</title>
+{og}
 {tag}
 <style>{CSS}</style>
 </head>

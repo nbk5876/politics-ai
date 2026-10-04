@@ -78,6 +78,13 @@ class UploadTests(unittest.TestCase):
         with self.assertRaises(PublishError):
             verify(self.f, CFG["public_url"], fetcher=lambda u: (404, data))
 
+    def test_upload_can_target_another_file_next_to_the_page(self):
+        r = Recorder()
+        upload(self.f, CFG, secret=SECRET, runner=r, remote_path="/home/me/site/preview.png")
+        cmd = r.calls[0][0]
+        self.assertEqual(cmd[-1], "sftp://example.org/home/me/site/preview.png.part")
+        self.assertIn("-RENAME /home/me/site/preview.png.part /home/me/site/preview.png", cmd)
+
     def test_child_environment_has_no_password_variable(self):
         r = Recorder()
         with mock.patch.dict("os.environ", {"DH_PASS": "secret-value", "KEEP": "1"}):

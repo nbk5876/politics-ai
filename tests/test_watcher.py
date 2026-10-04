@@ -599,6 +599,47 @@ class EmptyFeedAlertTests(unittest.TestCase):
             self.assertEqual(alerts, [False, False, True, False, False, False, False, True])
 
 
+class PreviewTagTests(unittest.TestCase):
+    P = {"page_url": "https://example.org/p.html", "image_url": "https://example.org/i.png",
+         "description": "Headlines and links, updated twice a day."}
+
+    def test_no_settings_means_no_tags(self):
+        from watcher.page import render
+        html = render([])
+        self.assertNotIn("og:", html)
+        self.assertNotIn("twitter:", html)
+
+    def test_tags_when_configured(self):
+        from watcher.page import render
+        html = render([], preview=self.P)
+        for needle in ('property="og:title" content="AI Safety Topic Links"',
+                       'property="og:image" content="https://example.org/i.png"',
+                       'property="og:url" content="https://example.org/p.html"',
+                       'name="twitter:card" content="summary_large_image"',
+                       'name="description" content="Headlines and links, updated twice a day."'):
+            self.assertIn(needle, html)
+
+    def test_bad_or_hostile_settings_add_nothing_or_are_escaped(self):
+        from watcher.page import preview_tags
+        for bad in (None, 5, [], {}, {**self.P, "image_url": "http://example.org/i.png"},
+                    {**self.P, "image_url": "javascript:alert(1)"}, {**self.P, "description": ""},
+                    {**self.P, "description": 7}, {**self.P, "page_url": "ftp://x"}):
+            self.assertEqual(preview_tags(bad), "", bad)
+        out = preview_tags({**self.P, "description": 'x"><script>alert(1)</script>'})
+        self.assertNotIn("<script>", out)
+        self.assertIn("&quot;&gt;&lt;script&gt;", out)
+
+    def test_run_reads_preview_from_the_local_settings_file(self):
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            (d / "s.json").write_text("[]", encoding="utf-8")
+            (d / "r.json").write_text(json.dumps(RULES), encoding="utf-8")
+            (d / "l.json").write_text(json.dumps({"preview": self.P}), encoding="utf-8")
+            runmod.main(["--sources", str(d / "s.json"), "--rules", str(d / "r.json"), "--state", str(d / "seen.json"),
+                         "--local", str(d / "l.json"), "--page", str(d / "p.html")])
+            self.assertIn("og:image", (d / "p.html").read_text(encoding="utf-8"))
+
+
 class AnalyticsTests(unittest.TestCase):
     MID = "G-TESTID1234"
 

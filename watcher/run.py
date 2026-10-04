@@ -119,10 +119,18 @@ def main(argv=None):
             print(f"ignoring analytics_id {str(mid)[:30]!r}: not a valid G- measurement ID")
         return mid
 
+    def preview_settings():
+        """Link-preview settings (page_url, image_url, description) from the optional local settings file."""
+        try:
+            cfg = json.loads(Path(a.local).read_text(encoding="utf-8"))
+            return cfg.get("preview") if isinstance(cfg, dict) else None
+        except (OSError, ValueError):
+            return None
+
     def write_page(extra=()):
         recs = state.data["archive"] + [r for r in extra if all(r["id"] != x["id"] for x in state.data["archive"])]
         Path(a.page).parent.mkdir(parents=True, exist_ok=True)
-        Path(a.page).write_text(render(recs, now, analytics_id=analytics_id()), encoding="utf-8")
+        Path(a.page).write_text(render(recs, now, analytics_id=analytics_id(), preview=preview_settings()), encoding="utf-8")
         print(f"page written: {a.page}")
 
     if not a.live:

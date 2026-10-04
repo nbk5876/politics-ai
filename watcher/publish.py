@@ -43,15 +43,16 @@ def _quote(s):
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def upload(local_path, cfg, secret=None, runner=subprocess.run):
-    """Upload one file. Raises PublishError, with the password removed from any message."""
+def upload(local_path, cfg, secret=None, runner=subprocess.run, remote_path=None):
+    """Upload one file (the page by default, or another file next to it via remote_path).
+    Raises PublishError, with the password removed from any message."""
     pin = cfg.get("hostkey_sha256")
     if not pin:
         raise PublishError("no hostkey_sha256 in the publish settings: refusing to upload without a pinned host key")
     pw = secret if secret is not None else get_secret()
     if not pw:
         raise PublishError("DH_PASS is not set")
-    final = cfg["remote_path"]
+    final = remote_path or cfg["remote_path"]
     tmp = final + ".part"
     url = f"sftp://{cfg['host']}{tmp}"  # upload under a temp name, then rename over the live file
     cmd = [cfg.get("curl", "curl"), "-sS", "--hostpubsha256", pin, "--ftp-create-dirs",
