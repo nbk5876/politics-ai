@@ -109,6 +109,8 @@ def preview_tags(preview):
     desc = preview.get("description")
     if not (page_url.startswith("https://") and image_url.startswith("https://") and isinstance(desc, str) and desc.strip()):
         return ""
+    if re.search(r"\s", page_url) or re.search(r"\s", image_url):  # no spaces or newlines inside a URL
+        return ""
     desc = " ".join(desc.split())[:200]
     alt = " ".join(str(preview.get("image_alt") or TITLE).split())[:120]
     q = lambda v: escape(v, quote=True)
@@ -117,6 +119,10 @@ def preview_tags(preview):
             ("property", "og:image", image_url), ("property", "og:image:alt", alt),
             ("name", "twitter:card", "summary_large_image"), ("name", "twitter:title", TITLE),
             ("name", "twitter:description", desc), ("name", "twitter:image", image_url)]
+    for key, name in (("image_width", "og:image:width"), ("image_height", "og:image:height")):
+        v = preview.get(key)
+        if isinstance(v, int) and not isinstance(v, bool) and 0 < v < 10000:
+            tags.append(("property", name, str(v)))
     return "\n".join(f'<meta {k}="{q(n)}" content="{q(v)}">' for k, n, v in tags)
 
 

@@ -629,6 +629,17 @@ class PreviewTagTests(unittest.TestCase):
         self.assertNotIn("<script>", out)
         self.assertIn("&quot;&gt;&lt;script&gt;", out)
 
+    def test_whitespace_inside_a_url_is_rejected_and_image_size_is_optional(self):
+        from watcher.page import preview_tags
+        for bad in ({**self.P, "image_url": "https://example.org/i\n.png"}, {**self.P, "page_url": "https://exa mple.org/p"}):
+            self.assertEqual(preview_tags(bad), "", bad)
+        out = preview_tags({**self.P, "image_width": 1236, "image_height": 671})
+        self.assertIn('property="og:image:width" content="1236"', out)
+        self.assertIn('property="og:image:height" content="671"', out)
+        out = preview_tags({**self.P, "image_width": "wide", "image_height": True})
+        self.assertNotIn("og:image:width", out)
+        self.assertNotIn("og:image:height", out)
+
     def test_run_reads_preview_from_the_local_settings_file(self):
         with tempfile.TemporaryDirectory() as td:
             d = Path(td)
