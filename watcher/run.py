@@ -105,11 +105,12 @@ def main(argv=None):
         mid = a.analytics_id
         if mid is None:  # the local settings file is optional in a dry run
             try:
-                mid = json.loads(Path(a.local).read_text(encoding="utf-8")).get("analytics_id")
+                cfg = json.loads(Path(a.local).read_text(encoding="utf-8"))
+                mid = cfg.get("analytics_id") if isinstance(cfg, dict) else None  # a non-object file counts as empty
             except (OSError, ValueError):
                 mid = None
-        if mid and not valid_analytics_id(mid):
-            print(f"ignoring analytics_id {mid!r}: not a valid G- measurement ID")
+        if mid is not None and not valid_analytics_id(mid):
+            print(f"ignoring analytics_id {str(mid)[:30]!r}: not a valid G- measurement ID")
         return mid
 
     def write_page(extra=()):

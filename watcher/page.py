@@ -75,7 +75,9 @@ def select(records, now, days=30):
 def valid_analytics_id(value):
     """A Google Analytics 4 measurement ID such as G-ABC123XYZ0, or None. Anything else is ignored,
     so a typo in the settings can never put odd text into the page."""
-    v = (value or "").strip()
+    if not isinstance(value, str):  # a number or list in the settings must not crash the run
+        return None
+    v = value.strip()
     return v if re.fullmatch(r"G-[A-Z0-9]{6,14}", v) else None
 
 

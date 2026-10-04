@@ -557,6 +557,21 @@ class AnalyticsTests(unittest.TestCase):
         for bad in ("", None, "UA-12345-1", "g-lowercase1", "G-12", "G-ABC123'); alert(1);//", "G-ABC<script>"):
             self.assertIsNone(valid_analytics_id(bad), bad)
 
+    def test_non_string_ids_and_odd_settings_files_do_not_crash(self):
+        from watcher.page import valid_analytics_id, render
+        for bad in (123, ["G-ABC123XYZ0"], {"a": 1}, True):
+            self.assertIsNone(valid_analytics_id(bad), bad)
+            self.assertNotIn("googletagmanager", render([], analytics_id=bad))
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            (d / "s.json").write_text("[]", encoding="utf-8")
+            (d / "r.json").write_text(json.dumps(RULES), encoding="utf-8")
+            for content in ("[1, 2]", '{"analytics_id": 123}', '{"analytics_id": ["x"]}', "not json"):
+                (d / "l.json").write_text(content, encoding="utf-8")
+                runmod.main(["--sources", str(d / "s.json"), "--rules", str(d / "r.json"), "--state", str(d / "seen.json"),
+                             "--local", str(d / "l.json"), "--page", str(d / "p.html")])
+                self.assertNotIn("googletagmanager", (d / "p.html").read_text(encoding="utf-8"))
+
     def test_no_tag_and_strict_policy_when_not_configured(self):
         from watcher.page import render
         html = render([])
