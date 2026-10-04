@@ -37,6 +37,11 @@ def safe_url(url):
     return u if u.lower().startswith(("http://", "https://")) else ""
 
 
+def friendly_date(d):
+    """'Oct 2 2026' (no leading zero; avoids strftime's platform-specific %-d)."""
+    return f"{d.strftime('%b')} {d.day} {d.year}" if d else ""
+
+
 def record(m, now):
     """The archive record for one match (no article text)."""
     it = m["item"]
@@ -138,7 +143,7 @@ def render(records, now=None, days=30, analytics_id=None, preview=None):
         title = escape(r["title"] or r["link"])
         head = (f'<a href="{escape(link, quote=True)}" target="_blank" rel="noopener noreferrer nofollow">{title}</a>'
                 if link else title)
-        body.append(f'<tr><td class="date">{d.strftime("%Y-%m-%d") if d else ""}</td><td>{head}</td>'
+        body.append(f'<tr><td class="date">{friendly_date(d)}</td><td>{head}</td>'
                     f'<td>{escape(r["source"])}</td></tr>')
     table = ('<div class="tablewrap"><table><thead><tr><th>Date</th><th>Headline</th><th>Source</th>'
              '</tr></thead><tbody>\n' + "\n".join(body) + "\n</tbody></table></div>"

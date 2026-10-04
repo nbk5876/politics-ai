@@ -413,6 +413,16 @@ class PageTests(unittest.TestCase):
         self.assertEqual(html.count("<th>"), 3)  # Date, Headline, Source
         self.assertEqual(html.count("<td"), 3)
 
+    def test_dates_are_shown_as_oct_2_2026(self):
+        from datetime import datetime, timezone
+        from watcher.page import friendly_date, render
+        self.assertEqual(friendly_date(datetime(2026, 10, 2, tzinfo=timezone.utc)), "Oct 2 2026")
+        self.assertEqual(friendly_date(datetime(2026, 12, 25, tzinfo=timezone.utc)), "Dec 25 2026")
+        self.assertEqual(friendly_date(None), "")
+        html = render([self.rec(1, published="2026-10-02T00:00:00Z")], self.now)
+        self.assertIn('<td class="date">Oct 2 2026</td>', html)
+        self.assertNotIn("2026-10-02", html.split("<tbody>")[1])
+
     def test_empty_page_says_so(self):
         from watcher.page import render
         self.assertIn("No matches in this period yet.", render([], self.now))
