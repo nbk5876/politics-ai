@@ -216,7 +216,7 @@ class CollectTests(unittest.TestCase):
         self.sources = [
             {"id": "atom", "label": "Atom", "type": "feed", "url": "u1", "people": ["P"]},
             {"id": "rss", "label": "RSS", "type": "feed", "url": "u2"},
-            {"id": "page", "label": "Page", "type": "page", "url": "u3"},
+            {"id": "other", "label": "Other", "type": "ftp", "url": "u3"},
         ]
 
     def tearDown(self):

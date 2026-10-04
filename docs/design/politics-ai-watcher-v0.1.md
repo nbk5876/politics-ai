@@ -37,9 +37,9 @@ Politics AI is a small AI Lab project that follows one news story so nobody has 
 | Links page and upload | Live: https://www.core3.com/politics-ai/ai-safety-topic-links.html |
 | Twice-a-day schedule | Live (Windows Scheduled Task, registered 2026-10-03) |
 | lcRachel summaries | Tried by hand twice; automatic summaries not built |
-| Page-watching (Anthropic, Amodei) | Not built |
+| Page-watching (Anthropic news, Dario Amodei's essays) | Live (added 2026-10-03) |
 | Code review | Debbie reviewed four times; all findings closed |
-| Tests | 56 unit tests, no network needed |
+| Tests | 91 unit tests, no network needed |
 
 ## 1a. Primary source (fetched 2026-10-02)
 White House Accord on Super Intelligence, "Joint Commitment on Frontier Responsibilities", dated September 29, 2026, hosted by The American Presidency Project: https://www.presidency.ucsb.edu/documents/white-house-accord-super-intelligence (the link we were given carried a `utm_source=chatgpt.com` tracking suffix, dropped here). Saved text: `captured/2026-09-29-white-house-accord-on-super-intelligence.txt` (kept out of git).
@@ -65,7 +65,7 @@ lcRachel only acts when a message reaches her, and she has no search or schedule
 ## 4. How the watcher works
 Code is in `watcher/`; settings are in `config/`.
 
-1. **Sources** (`config/sources.json`). Enabled: Sam Altman's blog (Atom feed), OpenAI news (RSS), Bing News search for the story (RSS), NVIDIA Newsroom (RSS), NVIDIA Technical Blog (Atom). Switched off: Google News search (its links are redirects a script cannot open; Bing's links contain the real publisher URL, which the watcher unwraps), and two page-only sources with no feed, the Anthropic news page and Dario Amodei's essays (phase 2). Not usable: X/Twitter posts, paywalled pages, outlets that block bots (Reuters, UPI).
+1. **Sources** (`config/sources.json`). Enabled: Sam Altman's blog (Atom feed), OpenAI news (RSS), Bing News search for the story (RSS), NVIDIA Newsroom (RSS), NVIDIA Technical Blog (Atom). Also enabled: Malwarebytes blog (RSS) and two page-only sources with no feed, the Anthropic news page and Dario Amodei's essays (see 'Page sources' below). Switched off: Google News search (its links are redirects a script cannot open; Bing's links contain the real publisher URL, which the watcher unwraps). Not usable: X/Twitter posts, paywalled pages, outlets that block bots (Reuters, UPI).
 2. **Matching** (`config/rules.json`), loose on purpose and tightened over time:
    - Items published before 2026-09-24 never match; items with an unreadable date are kept.
    - **Strong phrases** match alone: "White House Accord", "Accord on Super", "Joint Commitment on Frontier Responsibilities", "NVIDIA OpenShell", "NVIDIA Sentry", "Open Agent Safety Platform".
@@ -78,6 +78,9 @@ Code is in `watcher/`; settings are in `config/`.
 6. **Links page** (`watcher/page.py`): `ai-safety-topic-links.html` lists matches from the last 30 days, newest first, as headline, link, source and why it matched. Headlines and links only: no article text. Headlines from feeds are escaped, only http(s) links are allowed, and the page carries a content security policy.
 7. **Upload** (`watcher/publish.py`): the page goes over SFTP to the website. The server's host key is pinned (no pin, no upload), the password is read from an environment variable and handed over on standard input (never on a command line or in a log), the file is uploaded under a temporary name and renamed into place, and the live copy is fetched and compared byte for byte. One re-upload is tried if it does not match.
 8. **Schedule:** a Windows Scheduled Task, "PoliticsAI-Watcher", runs `python -m watcher.run --live` at 8:00 AM and 8:00 PM daily as the signed-in user, runs when the PC wakes if a run was missed, and stops after 15 minutes. It is created by `scripts/register-task.ps1`; output goes to `logs/watcher.log` (not committed). A dry run (`python -m watcher.run`, with no flag) prints what would match and writes only a local preview of the page.
+
+### Page sources (`watcher/pages.py`)
+For sites with no feed, a source of type `page` names the index page and a pattern for article links (for example `/news/<name>` on Anthropic's site, `/essay/<name>` and `/post/<name>` on Dario Amodei's). Each run the watcher reads the index, finds links it has not seen, opens each new article to get its title, published date (when the page states one) and text, and then the normal matching rules apply. On the first run for a page, old or undated links are remembered silently, so nothing floods; only links dated on or after the start date are looked at. At most 15 new articles are opened per source per run. A blank or broken index page counts toward the empty-source alert.
 
 ## 5. lcRachel's brief for a match
 - Use only the saved text. Cite the URL for every claim.
@@ -128,7 +131,6 @@ Design doc, the owner's approval, build, Debbie's code review, the owner's deplo
 
 ## 12. Not built yet
 - **Automatic lcRachel summaries:** lcRachel's replies go to whoever asked, so they would land in Jeff's channel and wake his watcher. Needs a design for where the replies go.
-- **Page-watching** for sources with no feed (the Anthropic news page, Dario Amodei's essays).
 - **Email:** needs SMTP settings supplied as environment variables.
 - **Grouping duplicate stories** from different outlets.
 - **SSH key login** in place of the password, and a cross-check of the pinned host key against the hosting panel.

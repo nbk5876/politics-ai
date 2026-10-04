@@ -20,6 +20,7 @@ from .fetch import fetch
 from .page import record, render, valid_analytics_id
 from .notify import format_digest, format_match, send_email, send_labchan
 from .publish import publish_page
+from .pages import read_page_items
 from .rules import matches
 from .state import State
 
@@ -32,12 +33,17 @@ def collect(sources, rules, state, baseline=False, log=print):
     for src in sources:
         if not src.get("enabled", True):
             continue
-        if src.get("type") != "feed":
-            log(f"skip {src['id']}: type '{src.get('type')}' is not supported yet")
+        kind = src.get("type")
+        if kind not in ("feed", "page"):
+            log(f"skip {src['id']}: type '{kind}' is not supported")
             continue
         try:
-            xml, _ = fetch(src["url"])
-            items = parse_feed(xml)
+            if kind == "feed":
+                xml, _ = fetch(src["url"])
+                items = parse_feed(xml)
+                listed = len(items)
+            else:
+                items, listed = read_page_items(src, state, since=rules.get("since"), fetcher=fetch)
         except Exception as e:
             n = state.record_failure(src["id"])
             failed.append(src["id"])
@@ -46,7 +52,7 @@ def collect(sources, rules, state, baseline=False, log=print):
         state.record_ok(src["id"])
         # A feed that comes back empty (or as a blank/error page) is not a failure on one run, but 3 in a row is
         # worth an alert; the counter lives next to the failure counters under "empty:<id>".
-        if items:
+        if listed:
             state.record_ok("empty:" + src["id"])
         else:
             state.record_failure("empty:" + src["id"])
@@ -63,11 +69,11 @@ def collect(sources, rules, state, baseline=False, log=print):
             if status == "seen":
                 continue
             new_items.append(it)
-            ok, reasons = matches(it, src, rules)
+            ok, reasons = matches(it, src, rules, text=it.get("text", ""))
             if ok:
                 found.append({"source": src, "item": it, "status": status, "reasons": reasons})
                 count += 1
-        log(f"ok   {src['id']}: {len(items)} items, {count} match" + (" (baseline: all marked seen)" if baseline else ""))
+        log(f"ok   {src['id']}: {listed} {'items' if kind == 'feed' else 'links'}" + (f", {len(items)} new" if kind == "page" else "") + f", {count} match" + (" (baseline: all marked seen)" if baseline else ""))
     return found, failed, new_items
 
 
