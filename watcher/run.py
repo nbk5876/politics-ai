@@ -19,6 +19,7 @@ from .feeds import parse_feed
 from .fetch import fetch
 from .page import record, render
 from .notify import format_digest, format_match, send_email, send_labchan
+from .publish import publish_page
 from .rules import matches
 from .state import State
 
@@ -151,18 +152,27 @@ def main(argv=None):
         except Exception as e:
             print(f"prune failed: {type(e).__name__}: {e}")
         state.save()  # first: what was sent must be remembered even if the page cannot be built
-        try:
-            write_page()
-            state.record_ok("page")
-        except Exception as e:
-            n = state.record_failure("page")
-            print(f"page failed ({n} in a row): {type(e).__name__}: {e}")
-            if n >= 3 and "page" not in state.data["alerted_sources"]:
-                try:
-                    send_labchan(f"Politics AI: the links page has failed to build {n} runs in a row.", local)
-                    state.data["alerted_sources"].append("page")
-                except Exception as e2:
-                    print(f"page alert failed: {type(e2).__name__}: {e2}")
+        def step(name, what, fn):
+            """Run one housekeeping step. Failures are counted like a failed feed: the third in a
+            row sends one LabChan alert, and a good run clears the count."""
+            try:
+                fn()
+                state.record_ok(name)
+                return True
+            except Exception as e:
+                n = state.record_failure(name)
+                print(f"{what} ({n} in a row): {type(e).__name__}: {e}")
+                if n >= 3 and name not in state.data["alerted_sources"]:
+                    try:
+                        send_labchan(f"Politics AI: {what} {n} runs in a row.", local)
+                        state.data["alerted_sources"].append(name)
+                    except Exception as e2:
+                        print(f"alert failed: {type(e2).__name__}: {e2}")
+                return False
+
+        built = step("page", "the links page failed to build", write_page)
+        if built and local.get("publish"):
+            step("publish", "the links page upload failed", lambda: publish_page(a.page, local["publish"]))
         state.save()
     return 0
 

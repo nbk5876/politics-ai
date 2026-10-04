@@ -451,7 +451,7 @@ class SecondReviewTests(unittest.TestCase):
             for _ in range(4):
                 _, lab = self._live(td, self.FEED, [mock.patch.object(runmod, "render", side_effect=RuntimeError("x"))])
                 labs.append(lab.call_args_list)
-            alert_runs = [i for i, calls in enumerate(labs) if any("links page has failed" in str(c) for c in calls)]
+            alert_runs = [i for i, calls in enumerate(labs) if any("links page failed to build" in str(c) for c in calls)]
             self.assertEqual(alert_runs, [2])  # third failure in a row alerts, and only once
             failures = json.loads((Path(td) / "seen.json").read_text(encoding="utf-8"))["failures"]
             self.assertEqual(failures.get("page"), 4)

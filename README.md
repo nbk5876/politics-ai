@@ -10,7 +10,7 @@ A small AI Lab project that follows one news story. It watches a list of sources
 3. Matches the headline and summary against the story's phrases and words.
 4. In a live run: saves the article text to `captured/`, sends a LabChan message and an email, and remembers the item so it is never reported twice.
 
-5. Builds a shareable page, `ai-safety-topic-links.html`: headlines and links only, last 30 days, newest first. A dry run writes a local preview to `previews/` (not committed); uploading it to the web is a separate step that is not built or approved yet.
+5. Builds a shareable page, `ai-safety-topic-links.html`: headlines and links only, last 30 days, newest first. A dry run writes a local preview to `previews/` (not committed); in a live run it is then uploaded over SFTP (`watcher/publish.py`) when `publish` is set in `config/local.json`. The upload needs a pinned server host key and reads the password from the `DH_PASS` environment variable (handed to curl on stdin, never logged); after uploading, the live page is fetched and compared byte for byte.
 
 The watcher itself makes no model calls, so it costs nothing to run. Summaries by lcRachel are a separate step that is not wired up yet.
 
@@ -33,5 +33,5 @@ Other modes, once approved: `--baseline` (remember everything that exists now, r
 ## Not built yet
 - Page-watching for sources without a feed (Anthropic news, Dario Amodei's essays)
 - Automatic lcRachel summaries
-- The twice-a-day scheduled run
+- The twice-a-day scheduled run (pending approval)
 - Email needs SMTP settings supplied through environment variables (see `watcher/notify.py`)

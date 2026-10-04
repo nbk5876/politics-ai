@@ -1,5 +1,13 @@
 {
-  "labchan_dir": "C:\\path\\to\\AI-Lab-Ops",
+  "labchan_dir": "C:\\path\to\\AI-Lab-Ops",
   "labchan_from": "jeff",
-  "labchan_to": "tb"
+  "labchan_to": "tb",
+  "publish": {
+    "host": "example.org",
+    "user": "your-sftp-user",
+    "remote_path": "/home/your-sftp-user/site/ai-safety-topic-links.html",
+    "public_url": "https://example.org/ai-safety-topic-links.html",
+    "hostkey_sha256": "base64 sha256 of the server's host key (required: nothing uploads without it)",
+    "curl": "C:\\Program Files\\Git\\mingw64\bin\\curl.exe"
+  }
 }
