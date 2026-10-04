@@ -104,7 +104,6 @@ def render(records, now=None, days=30, analytics_id=None):
     now = now or datetime.now(timezone.utc)
     mid = valid_analytics_id(analytics_id)
     tag, csp = analytics_parts(mid)
-    notice = " This page uses Google Analytics to count visits." if mid else ""
     rows = select(records, now, days)
     body = []
     for r in rows:
@@ -135,10 +134,10 @@ def render(records, now=None, days=30, analytics_id=None):
 <div class="meta">{len(rows)} link(s) from the last {days} days, newest first. Updated {escape(stamp)}.</div>
 <div class="note">Links to news and company posts about the White House Accord on Super Intelligence (September 29, 2026) and
 related AI safety announcements. Found automatically by a small AI Lab project, <a href="{REPO}">Politics AI</a>:
-headlines and links only, with the source named. A link here is not an endorsement, and the headlines are the
-publishers' own words.{notice}</div>
+headlines and links only, with the source named.</div>
 {table}
-<footer>Politics AI watcher, an AI Lab project. Source code and design: <a href="{REPO}">{REPO}</a></footer>
+<footer>A link here is not an endorsement, and the headlines are the publishers' own words.<br>
+Politics AI watcher, an AI Lab project. Source code and design: <a href="{REPO}">{REPO}</a></footer>
 </div>
 </body>
 </html>

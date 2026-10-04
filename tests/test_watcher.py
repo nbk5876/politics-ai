@@ -579,6 +579,14 @@ class AnalyticsTests(unittest.TestCase):
         self.assertNotIn("script-src", html)
         self.assertNotIn("Google Analytics", html)
 
+    def test_disclaimer_is_at_the_bottom_of_the_page(self):
+        from watcher.page import render
+        html = render([])
+        note = html[html.index('class="note"'):html.index("</div>", html.index('class="note"'))]
+        self.assertNotIn("not an endorsement", note)
+        self.assertGreater(html.index("not an endorsement"), html.index("<table") if "<table" in html else html.index("No matches"))
+        self.assertGreater(html.index("not an endorsement"), html.index("<footer>"))
+
     def test_invalid_id_adds_nothing_to_the_page(self):
         from watcher.page import render
         html = render([], analytics_id="G-ABC123'); alert(1);//")
@@ -590,7 +598,7 @@ class AnalyticsTests(unittest.TestCase):
         from watcher.page import render
         html = render([], analytics_id=self.MID)
         self.assertIn(f"https://www.googletagmanager.com/gtag/js?id={self.MID}", html)
-        self.assertIn("This page uses Google Analytics to count visits.", html)
+        self.assertNotIn("Google Analytics", html)  # no visible mention of it on the page
         inline = re.search(r"<script>(.*?)</script>", html, re.S).group(1)
         digest = base64.b64encode(hashlib.sha256(inline.encode("utf-8")).digest()).decode()
         csp = re.search(r'Content-Security-Policy" content="([^"]+)', html).group(1)
