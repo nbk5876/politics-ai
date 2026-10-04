@@ -79,6 +79,15 @@ class RuleTests(unittest.TestCase):
         self.assertFalse(matches({"title": "A new accord", "summary": ""}, src, RULES)[0])
         self.assertTrue(matches({"title": "The White House Accord explained", "summary": ""}, src, RULES)[0])
 
+    def test_nvidia_openshell_and_sentry_are_strong_phrases(self):
+        import json as _json
+        from pathlib import Path as _P
+        rules = _json.loads((_P(__file__).resolve().parent.parent / "config" / "rules.json").read_text(encoding="utf-8"))
+        src = {"id": "x", "label": "X"}
+        for title in ("NVIDIA OpenShell launches today", "Nvidia Sentry explained", "Why NVIDIA SENTRY matters"):
+            self.assertTrue(matches({"title": title, "summary": ""}, src, rules)[0], title)
+        self.assertFalse(matches({"title": "Open shell scripting tips", "summary": ""}, src, rules)[0])
+
     def test_since_date_drops_old_items_but_keeps_unreadable_dates(self):
         src = {"id": "x", "label": "X"}
         rules = {**RULES, "since": "2026-09-29"}
