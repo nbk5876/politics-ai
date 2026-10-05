@@ -70,7 +70,7 @@ class PublisherTests(unittest.TestCase):
         m = {"source": src, "item": item, "status": "new", "reasons": ["x"]}
         rec = record(m, now)
         self.assertEqual(rec["source"], "Al Jazeera on MSN")
-        self.assertIn("<td>Al Jazeera on MSN</td>", render([rec], now))
+        self.assertIn("<span>Al Jazeera on MSN</span></span></td>", render([rec], now, icons={}))
         self.assertIn("Source: Al Jazeera on MSN", format_match(m))
         m["item"] = {**item, "publisher": ""}
         self.assertEqual(record(m, now)["source"], src["label"])  # falls back to the feed's own name

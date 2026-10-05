@@ -9,6 +9,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from html import escape
 
+from . import icons as icons_module
 from .rules import parse_date
 
 TITLE = "AI Safety Topic Links"
@@ -26,6 +27,10 @@ CSS = """
   th, td { border: 1px solid #ccc; padding: .4rem .6rem; text-align: left; vertical-align: top; font-size: .9rem; }
   th { background: #e9e9e9; }
   td.date { white-space: nowrap; }
+  .src { display: flex; align-items: center; gap: .45rem; }
+  .ico { flex: 0 0 18px; width: 18px; height: 18px; border-radius: 3px; background-size: contain;
+         background-repeat: no-repeat; background-position: center; }
+  .badge { background: #666; color: #fff; font: 700 11px/18px Arial, Helvetica, sans-serif; text-align: center; }
   footer { margin-top: 1.5rem; color: #555; font-size: .85rem; }
   a { color: #0b57d0; }
 """
@@ -102,15 +107,16 @@ def analytics_parts(mid):
 
     The policy allows only Google's analytics hosts. The small inline start-up script is allowed by its
     hash, not by 'unsafe-inline', so no other inline script can run."""
-    strict = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"
+    base = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"
+    strict = base + "; img-src data:"  # data: is for the embedded source icons
     if not mid:
         return "", strict
     inline = ("window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}"
               f"gtag('js',new Date());gtag('config','{mid}');")
     digest = base64.b64encode(hashlib.sha256(inline.encode("utf-8")).digest()).decode()
-    csp = (strict + f"; script-src 'sha256-{digest}' https://www.googletagmanager.com"
+    csp = (base + f"; script-src 'sha256-{digest}' https://www.googletagmanager.com"
            "; connect-src https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com"
-           "; img-src https://*.google-analytics.com https://*.googletagmanager.com")
+           "; img-src data: https://*.google-analytics.com https://*.googletagmanager.com")
     markup = (f'<script async src="https://www.googletagmanager.com/gtag/js?id={mid}"></script>\n'
               f"<script>{inline}</script>")
     return markup, csp
@@ -142,8 +148,24 @@ def preview_tags(preview):
     return "\n".join(f'<meta {k}="{q(n)}" content="{q(v)}">' for k, n, v in tags)
 
 
-def render(records, now=None, days=30, analytics_id=None, preview=None):
+def source_cell(source, icons, css):
+    """The Source cell: a small icon (or a letter badge) and the name. `css` collects one rule per icon used,
+    so each icon is embedded once however many rows use it."""
+    name = escape(source)
+    uri = icons_module.icon_for(source, icons)
+    if uri:
+        cls = css.setdefault(uri, f"i{len(css)}")
+        mark = f'<span class="ico {cls}" aria-hidden="true"></span>'
+    else:
+        letter = next((c for c in icons_module.outlet(source) if c.isalnum()), "?")
+        mark = f'<span class="ico badge" aria-hidden="true">{escape(letter.upper())}</span>'
+    return f'<td><span class="src">{mark}<span>{name}</span></span></td>'
+
+
+def render(records, now=None, days=30, analytics_id=None, preview=None, icons=None):
     now = now or datetime.now(timezone.utc)
+    icons = icons_module.default_icons() if icons is None else icons
+    icon_css = {}
     mid = valid_analytics_id(analytics_id)
     tag, csp = analytics_parts(mid)
     og = preview_tags(preview)
@@ -156,11 +178,12 @@ def render(records, now=None, days=30, analytics_id=None, preview=None):
         head = (f'<a href="{escape(link, quote=True)}" target="_blank" rel="noopener noreferrer nofollow">{title}</a>'
                 if link else title)
         body.append(f'<tr><td class="date">{friendly_date(d)}</td><td>{head}</td>'
-                    f'<td>{escape(r["source"])}</td></tr>')
+                    f'{source_cell(r["source"], icons, icon_css)}</tr>')
     table = ('<div class="tablewrap"><table><thead><tr><th>Date</th><th>Headline</th><th>Source</th>'
              '</tr></thead><tbody>\n' + "\n".join(body) + "\n</tbody></table></div>"
              if body else "<p>No matches in this period yet.</p>")
     stamp = friendly_stamp(now)
+    icon_rules = "".join(f"  .{cls} {{ background-image: url({uri}); }}" + chr(10) for uri, cls in icon_css.items())
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -170,7 +193,7 @@ def render(records, now=None, days=30, analytics_id=None, preview=None):
 <title>{TITLE}</title>
 {og}
 {tag}
-<style>{CSS}</style>
+<style>{CSS}{icon_rules}</style>
 </head>
 <body>
 <div class="wrap">
