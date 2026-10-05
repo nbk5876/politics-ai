@@ -27,6 +27,12 @@ CSS = """
   th, td { border: 1px solid #ccc; padding: .4rem .6rem; text-align: left; vertical-align: top; font-size: .9rem; }
   th { background: #e9e9e9; }
   td.date { white-space: nowrap; }
+  .switch > input { position: absolute; opacity: 0; pointer-events: none; }
+  .switch > label { display: inline-block; padding: .3rem .9rem; margin: 0 .35rem .6rem 0; border: 1px solid #999;
+                    border-radius: 1rem; background: #fff; cursor: pointer; font-size: .9rem; }
+  .switch > input:checked + label { background: #0b57d0; border-color: #0b57d0; color: #fff; }
+  .switch > input:focus-visible + label { outline: 2px solid #222; outline-offset: 2px; }
+  #show-central:checked ~ .tablewrap tr.adjacent { display: none; }
   .src { display: flex; align-items: center; gap: .45rem; }
   .ico { flex: 0 0 18px; width: 18px; height: 18px; border-radius: 3px; background-size: contain;
          background-repeat: no-repeat; background-position: center; }
@@ -63,7 +69,7 @@ def record(m, now):
     """The archive record for one match (no article text)."""
     it = m["item"]
     return {"id": it["id"], "title": it["title"][:300], "link": it["link"], "source": it.get("publisher") or m["source"]["label"],
-            "published": it.get("published", ""), "reasons": "; ".join(m["reasons"]),
+            "published": it.get("published", ""), "reasons": "; ".join(m["reasons"]), "tier": m.get("tier", "central"),
             "first_seen": now.isoformat(timespec="seconds")}
 
 
@@ -170,6 +176,8 @@ def render(records, now=None, days=30, analytics_id=None, preview=None, icons=No
     tag, csp = analytics_parts(mid)
     og = preview_tags(preview)
     rows = select(records, now, days)
+    n_adjacent = sum(1 for r in rows if r.get("tier") == "adjacent")  # anything else counts as central
+    has_adjacent = n_adjacent > 0  # with no adjacent links the page is exactly as before: no column, no switch
     body = []
     for r in rows:
         d = _when(r, now)
@@ -177,11 +185,26 @@ def render(records, now=None, days=30, analytics_id=None, preview=None, icons=No
         title = escape(r["title"] or r["link"])
         head = (f'<a href="{escape(link, quote=True)}" target="_blank" rel="noopener noreferrer nofollow">{title}</a>'
                 if link else title)
-        body.append(f'<tr><td class="date">{friendly_date(d)}</td><td>{head}</td>'
+        adjacent = r.get("tier") == "adjacent"
+        topic = f'<td>{"Adjacent" if adjacent else "Central"}</td>' if has_adjacent else ""
+        row_open = '<tr class="adjacent">' if adjacent else "<tr>"
+        body.append(f'{row_open}<td class="date">{friendly_date(d)}</td><td>{head}</td>{topic}'
                     f'{source_cell(r["source"], icons, icon_css)}</tr>')
-    table = ('<div class="tablewrap"><table><thead><tr><th>Date</th><th>Headline</th><th>Source</th>'
+    topic_head = "<th>Topic</th>" if has_adjacent else ""
+    table = ('<div class="tablewrap"><table><thead><tr><th>Date</th><th>Headline</th>' + topic_head + '<th>Source</th>'
              '</tr></thead><tbody>\n' + "\n".join(body) + "\n</tbody></table></div>"
              if body else "<p>No matches in this period yet.</p>")
+    if has_adjacent and body:
+        # A CSS-only switch (radio buttons, no script): Central is selected by default and hides the adjacent rows.
+        switch = ('<input type="radio" name="show" id="show-central" checked><label for="show-central">Central</label>'
+                  '<input type="radio" name="show" id="show-all"><label for="show-all">All</label>\n')
+        table = '<div class="switch">' + switch + table + "</div>"
+        counts = (f"{len(rows) - n_adjacent} central link(s) and {n_adjacent} adjacent from the last {days} days, "
+                  "newest first. Adjacent links are shown when you choose All.")
+        adj_note = (" Adjacent links are related to the topic but do not name the Accord itself.")
+    else:
+        counts = f"{len(rows)} link(s) from the last {days} days, newest first."
+        adj_note = ""
     stamp = friendly_stamp(now)
     icon_rules = "".join(f"  .{cls} {{ background-image: url({uri}); }}" + chr(10) for uri, cls in icon_css.items())
     return f"""<!DOCTYPE html>
@@ -198,10 +221,10 @@ def render(records, now=None, days=30, analytics_id=None, preview=None, icons=No
 <body>
 <div class="wrap">
 <h1>{TITLE}</h1>
-<div class="meta">{len(rows)} link(s) from the last {days} days, newest first. Updated {escape(stamp)}.</div>
+<div class="meta">{counts} Updated {escape(stamp)}.</div>
 <div class="note">Links to news and company posts about the White House Accord on Super Intelligence (September 29, 2026) and
 related AI safety announcements. Found automatically by a small AI Lab project, <a href="{REPO}">Politics AI</a>:
-headlines and links only, with the source named.</div>
+headlines and links only, with the source named.{adj_note}</div>
 {table}
 <footer>A link here is not an endorsement, and the headlines are the publishers' own words.<br>
 Politics AI watcher, an AI Lab project. Source code and design: <a href="{REPO}">{REPO}</a></footer>

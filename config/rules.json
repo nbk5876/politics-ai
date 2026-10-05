@@ -32,5 +32,13 @@
       "OpenAI|Anthropic",
       "agent*|sandbox"
     ]
-  ]
+  ],
+  "adjacent": {
+    "since": "2026-09-15",
+    "strong": ["superintelligence", "AI safety", "AI treaty"],
+    "strong_combos": [["regulat*", "=AI"]],
+    "weak": ["treaty", "inspection*", "safeguard*", "frontier", "binding", "AI risk*"],
+    "min_weak": 2,
+    "require_context": ["=AI", "=A.I.", "artificial intelligence", "superintelligence", "super intelligence"]
+  }
 }

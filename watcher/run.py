@@ -43,7 +43,9 @@ def collect(sources, rules, state, baseline=False, log=print):
                 items = parse_feed(xml)
                 listed = len(items)
             else:
-                items, listed = read_page_items(src, state, since=rules.get("since"), fetcher=fetch)
+                # an adjacent page source starts from the adjacent tier's own earlier date
+                since = (rules.get("adjacent") or {}).get("since") if src.get("adjacent") else None
+                items, listed = read_page_items(src, state, since=since or rules.get("since"), fetcher=fetch)
         except Exception as e:
             n = state.record_failure(src["id"])
             failed.append(src["id"])
@@ -70,9 +72,18 @@ def collect(sources, rules, state, baseline=False, log=print):
                 continue
             new_items.append(it)
             ok, reasons = matches(it, src, rules, text=it.get("text", ""))
-            if ok:
-                found.append({"source": src, "item": it, "status": status, "reasons": reasons})
+            adj_src = bool(src.get("adjacent") and rules.get("adjacent"))
+            # On an adjacent source a central match must name the topic outright (a strong phrase). Two loose
+            # words such as 'AI safety' and 'collaborat*' are common in related pieces, so that is adjacent.
+            if ok and (not adj_src or any(r.startswith("phrases:") for r in reasons)):
+                found.append({"source": src, "item": it, "status": status, "reasons": reasons, "tier": "central"})
                 count += 1
+            elif adj_src:
+                ok_adj, reasons_adj = matches(it, src, rules["adjacent"], text=it.get("text", ""))
+                if ok_adj or ok:
+                    found.append({"source": src, "item": it, "status": status,
+                                  "reasons": reasons_adj if ok_adj else reasons, "tier": "adjacent"})
+                    count += 1
         log(f"ok   {src['id']}: {listed} {'items' if kind == 'feed' else 'links'}" + (f", {len(items)} new" if kind == "page" else "") + f", {count} match" + (" (baseline: all marked seen)" if baseline else ""))
     return found, failed, new_items
 
@@ -110,7 +121,8 @@ def main(argv=None):
     cap = a.cap if a.cap is not None else rules.get("notify_cap", 10)
     print(f"\n{len(found)} match(es)" + ("" if a.live else " (dry run: nothing sent, saved or remembered)"))
     for m in found:
-        print(f"- [{m['status']}] {m['item']['title']}\n    {m['source']['label']} | {m['item']['link']}\n    {'; '.join(m['reasons'])}")
+        tag = "" if m.get("tier", "central") == "central" else " (adjacent)"
+        print(f"- [{m['status']}]{tag} {m['item']['title']}\n    {m['source']['label']} | {m['item']['link']}\n    {'; '.join(m['reasons'])}")
     now = datetime.now(timezone.utc)
 
     def analytics_id():
@@ -145,6 +157,9 @@ def main(argv=None):
 
     local = json.loads(Path(a.local).read_text(encoding="utf-8"))
     found_ids = {m["item"]["id"] for m in found}
+    # Adjacent matches go on the page only: no LabChan message, no email, no saved copy of the article.
+    adjacent = [m for m in found if m.get("tier", "central") == "adjacent"]
+    found = [m for m in found if m.get("tier", "central") != "adjacent"]
     for it in new_items:  # new but not matching: nothing to send, so remember them now
         if it["id"] not in found_ids:
             state.mark(it)
@@ -161,6 +176,9 @@ def main(argv=None):
             print(f"email failed: {type(e).__name__}: {e}")
 
     try:
+        for m in adjacent:
+            state.archive(record(m, now))
+            state.mark(m["item"])
         for m in found[:cap]:
             path, ok = capture(m["item"], m["source"], a.captured)
             text = format_match(m, path.name, ok)

@@ -79,5 +79,33 @@
     ],
     "enabled": true,
     "link_pattern": "^/(essay|post)/[^/]+$"
+  },
+  {
+    "id": "sanders-press",
+    "label": "Sanders press releases",
+    "type": "feed",
+    "url": "https://www.sanders.senate.gov/press-releases/feed/",
+    "adjacent": true,
+    "enabled": true
+  },
+  {
+    "id": "khanna-in-the-news",
+    "label": "Rep. Khanna: in the news",
+    "type": "page",
+    "url": "https://khanna.house.gov/media/in-the-news",
+    "link_pattern": "^/media/in-the-news/[^/]+$",
+    "adjacent": true,
+    "baseline_first_run": false,
+    "enabled": true
+  },
+  {
+    "id": "bing-news-adjacent",
+    "label": "Bing News: AI safety treaty China",
+    "type": "feed",
+    "url": "https://www.bing.com/news/search?q=AI+safety+treaty+China&format=rss",
+    "require_keyword_in_title": true,
+    "hash_title_only": true,
+    "adjacent": true,
+    "enabled": true
   }
 ]

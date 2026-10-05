@@ -1,6 +1,13 @@
 # Adjacent tier for the links page: proposal v0.1
 
-Status: PROPOSAL for TB and Debbie. Nothing here is built or live. Written 2026-10-05.
+Status: BUILT 2026-10-05 after TB's go (commit follows this edit); not yet reviewed by Debbie. Written 2026-10-05.
+
+Build note, one change from the text below: on an adjacent source, an item counts as central only if it hits a
+strong central phrase. Two loose central words (such as 'AI safety' and 'collaborat*') make it adjacent, because
+those words are common in related pieces; the first dry run showed Khanna's playbook page would otherwise have
+been central and sent an alert. Sources not marked adjacent behave exactly as before. A page source can set
+`baseline_first_run: false` so its first run looks at the links instead of remembering them silently (used for
+Khanna's index, whose links carry no date).
 
 ## 1. What and why
 

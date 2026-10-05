@@ -98,7 +98,9 @@ def read_page_items(src, state, since=None, fetcher=fetch, limit=MAX_NEW_PER_RUN
     summary and text. The link count lets an empty or broken index page be noticed."""
     index_html, final = fetcher(src["url"])
     links = parse_links(index_html, final, src["link_pattern"])
-    first_run = src["id"] not in state.data.setdefault("page_baselined", [])
+    # `baseline_first_run: false` lets a source's first run look at the links it finds (up to `limit`) instead of
+    # remembering them silently; used for adjacent index pages whose links carry no date on the index.
+    first_run = src["id"] not in state.data.setdefault("page_baselined", []) and src.get("baseline_first_run", True)
     since_dt = datetime.fromisoformat(since).replace(tzinfo=timezone.utc) if since else None
     items = []
     for url, text in links:

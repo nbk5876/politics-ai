@@ -36,7 +36,9 @@ class State:
         An 'updated' item replaces its older record, so the page shows the current headline."""
         for i, r in enumerate(self.data["archive"]):
             if r["id"] == rec["id"]:
-                self.data["archive"][i] = {**r, "title": rec["title"], "reasons": rec["reasons"]}
+                # a record that was adjacent and now matches central is promoted; central is never demoted
+                tier = "central" if "central" in (r.get("tier", "central"), rec.get("tier", "central")) else "adjacent"
+                self.data["archive"][i] = {**r, "title": rec["title"], "reasons": rec["reasons"], "tier": tier}
                 return
         self.data["archive"].append(rec)
 
