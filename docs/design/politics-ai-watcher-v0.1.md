@@ -51,6 +51,12 @@ Politics AI is a small AI Lab project that follows one news story so nobody has 
 
 lcRachel is only a model; the code around her does the work. For a page, the adapter uses `web_fetch.py` (the `fetch-page:` command) to download the text, or `rachel_browse.py` (the `browse:` command) to drive a read-only browser limited to core3.com. Since 2026-10-04 a `fetch-page:` request starts from a clean slate, with no earlier conversation, and the bridge adds the grounding rules (see `rachel-summary-instructions-v0.2.md`).
 
+### Where facts get added for lcRachel
+
+<img src="images/lcRachel-facts-flow.png" alt="Places where facts get added for lcRachel: pinned facts, shared lab context and her own context file (all added by TB), plus recent exchanges, recent LabChan messages and page text from fetch-page:, all feeding the lcRachel bridge and then the LLM" width="100%">
+
+*A quick overview, as of 2026-10-05. Boxes 1 to 3 are where a person adds facts: pinned facts (`remember:` in LabChan, humans only), the shared lab context file and her own context file (both edited in git). Boxes 4 to 6 are filled automatically: a rolling log of recent exchanges per sender, recent LabChan messages plus OpenAI's own response chain, and the page text from a `fetch-page:` request, which lives for one request only (the dotted line). That last one is the gap found in the CNBC follow-up test: a plain follow-up has no page text.*
+
 ## 1a. Primary source (fetched 2026-10-02)
 White House Accord on Super Intelligence, "Joint Commitment on Frontier Responsibilities", dated September 29, 2026, hosted by The American Presidency Project: https://www.presidency.ucsb.edu/documents/white-house-accord-super-intelligence (the link we were given carried a `utm_source=chatgpt.com` tracking suffix, dropped here). Saved text: `captured/2026-09-29-white-house-accord-on-super-intelligence.txt` (kept out of git).
 
