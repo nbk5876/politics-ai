@@ -145,10 +145,19 @@ def main(argv=None):
         except (OSError, ValueError):
             return None
 
+    def simple_analytics():
+        """True only when the optional local settings file says `"simple_analytics": true`."""
+        try:
+            cfg = json.loads(Path(a.local).read_text(encoding="utf-8"))
+            return isinstance(cfg, dict) and cfg.get("simple_analytics") is True
+        except (OSError, ValueError):
+            return False
+
     def write_page(extra=()):
         recs = state.data["archive"] + [r for r in extra if all(r["id"] != x["id"] for x in state.data["archive"])]
         Path(a.page).parent.mkdir(parents=True, exist_ok=True)
-        Path(a.page).write_text(render(recs, now, analytics_id=analytics_id(), preview=preview_settings()), encoding="utf-8")
+        Path(a.page).write_text(render(recs, now, analytics_id=analytics_id(), preview=preview_settings(),
+                                       simple_analytics=simple_analytics()), encoding="utf-8")
         print(f"page written: {a.page}")
 
     if not a.live:

@@ -196,6 +196,54 @@ class PageTests(unittest.TestCase):
         self.assertNotIn("<script>alert(1)</script>", html)
 
 
+class SimpleAnalyticsTests(unittest.TestCase):
+    MID = "G-ABC123XYZ0"
+
+    def csp(self, html):
+        return re.search(r'Content-Security-Policy" content="([^"]+)', html).group(1)
+
+    def test_off_by_default_nothing_added(self):
+        html = render([], NOW, icons={})
+        self.assertNotIn("simpleanalyticscdn", html)
+
+    def test_on_adds_the_script_and_exactly_its_two_hosts_to_the_policy(self):
+        html = render([], NOW, icons={}, simple_analytics=True)
+        self.assertIn('<script async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>', html)
+        self.assertIn("<noscript><img src=\"https://queue.simpleanalyticscdn.com/noscript.gif\"", html)
+        csp = self.csp(html)
+        self.assertIn("script-src https://scripts.simpleanalyticscdn.com", csp)
+        self.assertIn("connect-src https://queue.simpleanalyticscdn.com", csp)
+        self.assertIn("img-src data: https://queue.simpleanalyticscdn.com", csp)
+        for d in ("script-src", "connect-src", "img-src"):
+            self.assertEqual(csp.count(d), 1)  # one directive each: a second would be ignored by the browser
+        self.assertIn("default-src 'none'", csp)
+
+    def test_works_together_with_google_analytics(self):
+        html = render([], NOW, icons={}, analytics_id=self.MID, simple_analytics=True)
+        csp = self.csp(html)
+        self.assertIn("https://www.googletagmanager.com https://scripts.simpleanalyticscdn.com", csp)
+        self.assertIn("https://queue.simpleanalyticscdn.com", csp)
+        self.assertIn(f"gtag/js?id={self.MID}", html)
+        self.assertEqual(html.count("<script"), 3)  # Google loader, Google start-up, Simple Analytics
+        for d in ("script-src", "connect-src", "img-src"):
+            self.assertEqual(csp.count(d), 1)
+
+    def test_only_a_real_true_turns_it_on(self):
+        for value in ("yes", 1, "true", None):
+            self.assertNotIn("simpleanalyticscdn", render([], NOW, icons={}, simple_analytics=value))
+
+    def test_run_reads_the_setting_from_the_local_file(self):
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            (d / "s.json").write_text("[]", encoding="utf-8")
+            (d / "r.json").write_text(json.dumps(RULES), encoding="utf-8")
+            for cfg, expected in (({"simple_analytics": True}, True), ({}, False), ({"simple_analytics": "yes"}, False)):
+                (d / "l.json").write_text(json.dumps(cfg), encoding="utf-8")
+                runmod.main(["--sources", str(d / "s.json"), "--rules", str(d / "r.json"), "--state", str(d / "seen.json"),
+                             "--local", str(d / "l.json"), "--page", str(d / "p.html")])
+                self.assertEqual("simpleanalyticscdn" in (d / "p.html").read_text(encoding="utf-8"), expected)
+
+
 class PageSourceFirstRunTests(unittest.TestCase):
     INDEX = '<a href="/media/in-the-news/ai-playbook">Exclusive: AI playbook</a><a href="/media/in-the-news/other">Other</a>'
 
