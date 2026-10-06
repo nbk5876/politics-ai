@@ -218,6 +218,13 @@ class SimpleAnalyticsTests(unittest.TestCase):
             self.assertEqual(csp.count(d), 1)  # one directive each: a second would be ignored by the browser
         self.assertIn("default-src 'none'", csp)
 
+    def test_the_tag_sits_at_the_bottom_of_the_body_as_the_service_asks(self):
+        html = render([], NOW, icons={}, analytics_id=self.MID, simple_analytics=True)
+        tail = html[html.index("</div>\n<script async src=\"https://scripts.simpleanalyticscdn.com"):]
+        self.assertTrue(tail.rstrip().endswith("</noscript>\n</body>\n</html>"))
+        self.assertNotIn("simpleanalyticscdn", html[:html.index("<body>")].replace(
+            "https://scripts.simpleanalyticscdn.com; connect", "").replace("https://queue.simpleanalyticscdn.com", ""))
+
     def test_works_together_with_google_analytics(self):
         html = render([], NOW, icons={}, analytics_id=self.MID, simple_analytics=True)
         csp = self.csp(html)

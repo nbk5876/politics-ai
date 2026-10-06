@@ -116,7 +116,8 @@ SA_MARKUP = (f'<script async src="{SA_SCRIPT_HOST}/latest.js"></script>\n'
 
 def analytics_parts(mid, simple=False):
     """(head markup, content-security-policy) for the optional analytics: Google Analytics (`mid`) and/or
-    Simple Analytics (`simple`). With neither, ('', strict policy).
+    Simple Analytics (`simple`). With neither, ('', strict policy). The head markup is Google's only; Simple
+    Analytics asks for its tag at the bottom of the body, so render adds SA_MARKUP there.
 
     The policy allows only those services' hosts. Google's small inline start-up script is allowed by its
     hash, not by 'unsafe-inline', so no other inline script can run."""
@@ -131,11 +132,10 @@ def analytics_parts(mid, simple=False):
         img_src += ["https://*.google-analytics.com", "https://*.googletagmanager.com"]
         markup.append(f'<script async src="https://www.googletagmanager.com/gtag/js?id={mid}"></script>\n'
                       f"<script>{inline}</script>")
-    if simple:
+    if simple:  # its tag itself goes at the bottom of the body (see render); only the policy is built here
         script_src.append(SA_SCRIPT_HOST)
         connect_src.append(SA_QUEUE_HOST)
         img_src.append(SA_QUEUE_HOST)
-        markup.append(SA_MARKUP)
     parts = [base]
     if script_src:
         parts.append("script-src " + " ".join(script_src))
@@ -191,6 +191,7 @@ def render(records, now=None, days=30, analytics_id=None, preview=None, icons=No
     icon_css = {}
     mid = valid_analytics_id(analytics_id)
     tag, csp = analytics_parts(mid, simple=simple_analytics is True)
+    sa_tag = SA_MARKUP + "\n" if simple_analytics is True else ""
     og = preview_tags(preview)
     rows = select(records, now, days)
     n_adjacent = sum(1 for r in rows if r.get("tier") == "adjacent")  # anything else counts as central
@@ -246,6 +247,6 @@ headlines and links only, with the source named.{adj_note}</div>
 <footer>A link here is not an endorsement, and the headlines are the publishers' own words.<br>
 Politics AI watcher, an AI Lab project. Source code and design: <a href="{REPO}">{REPO}</a></footer>
 </div>
-</body>
+{sa_tag}</body>
 </html>
 """
